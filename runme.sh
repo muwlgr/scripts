@@ -12,8 +12,8 @@ do [ -d $i ] || continue
    break
 done
 chroot . || :
-while fgrep $root /proc/mounts
-do fgrep $root /proc/mounts | while read h i j
+while fgrep $root/ /proc/mounts
+do fgrep $root/ /proc/mounts | while read h i j
    do umount $i || :
    done 
 done
