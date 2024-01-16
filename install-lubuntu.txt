@@ -20,10 +20,10 @@ mkfs.vfat /dev/${DEV}1
 mkfs.f2fs /dev/${DEV}2
 mkdir /tmp/${DEV}2 
 mount /dev/${DEV}2 /tmp/${DEV}2
-cd /tmp/${DEV}2
-time debootstrap --arch=i386 bionic . http://ua.archive.ubuntu.com/ubuntu
-du -sh .
-( cd root 
+( cd /tmp/${DEV}2
+  time debootstrap --arch=i386 bionic . http://ua.archive.ubuntu.com/ubuntu
+  du -sh .
+  cd root 
   wget https://github.com/muwlgr/scripts/raw/main/runme.sh
   wget https://github.com/muwlgr/scripts/raw/main/complete-lubuntu.sh )
 export DEV
