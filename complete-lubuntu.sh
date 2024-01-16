@@ -37,11 +37,11 @@ eatmydata apt update
 time eatmydata apt upgrade # not dist-upgrade, to keep fwupd packages
 dpkg-reconfigure tzdata
 dpkg-reconfigure locales
-time eatmydata apt install libreoffice nmap tcpdump lsof lshw rsync openssh-server systemd-cron bash-completion dphys-swapfile
+time eatmydata apt install libreoffice nmap tcpdump lsof lshw rsync openssh-server systemd-cron bash-completion dphys-swapfile nullmailer
 echo CONF_SWAPSIZE=2048 >> /etc/dphys-swapfile # it still requires manual reconfiguration
 dd if=/dev/zero of=/var/swap bs=1M count=2048 # and fallocate creates files with holes on f2fs, so create it by dd
 sudo add-apt-repository ppa:remmina-ppa-team/remmina-next
-eatmydata install remmina
+eatmydata apt install remmina
 #trim some slack pulled in by lubuntu-desktop
 eatmydata apt remove activity-log-manager apparmor at-spi2-core anacron cron gnome-online-accounts gnome-control-center gnome-session-bin gnome-startup-applications gnome-software-plugin-snap libwhoopsie-preferences0 networkd-dispatcher netplan.io nplan nullmailer rsyslog rtkit snapd squashfs-tools thermald unity-control-center whoopsie-preferences xserver-xorg-legacy zeitgeist-core
 eatmydata apt autoremove
@@ -58,7 +58,7 @@ done # fix for f2fs support in bionic
 rm $t
 eatmydata apt install f2fs-tools dosfstools # this will update initrd
 echo GRUB_CMDLINE_LINUX_DEFAULT=\"root=$(awk '$2=="/"{print $1}' /etc/fstab)\" >> /etc/default/grub
-#grub-install /dev/$DEV # install into MBR
+grub-install /dev/$DEV # install into MBR
 update-grub
 
 adduser office
