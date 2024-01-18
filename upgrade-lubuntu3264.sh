@@ -1,3 +1,6 @@
+# wget https://raw.githubusercontent.com/muwlgr/scripts/main/upgrade-lubuntu3264.sh
+# sudo bash upgrade-lubuntu3264.sh
+
 uname -m | grep 'i.86' && 
 { dpkg --add-architecture amd64
   apt update
