@@ -13,9 +13,6 @@ uname -m | grep i.86 && { # while we are under 32-bit kernel
  reboot
 }
 
-# acpid can't complete its upgrade properly, reinstall it - https://bugs.launchpad.net/ubuntu/+source/acpid/+bug/1760391
-dpkg -l acpid | grep -w i.86 && apt remove acpid
-
 dpkg -l dpkg | grep -w i.86 && { # upgrade apt and dpkg
  apt install apt:amd64 apt-utils:amd64 dpkg:amd64
  apt update
