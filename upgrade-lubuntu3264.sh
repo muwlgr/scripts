@@ -13,9 +13,8 @@ uname -m | grep i.86 && { # while we are under 32-bit kernel
  reboot
 }
 
-dpkg -l acpid | grep -w i.86 && { # acpid can't complete its upgrade properly
- apt install acpid
- systemctl --failed | grep acpid && reboot
+dpkg -l acpid | grep -w i.86 && { # acpid can't complete its upgrade properly, reinstall it
+ apt remove acpid
 }
 
 dpkg -l dpkg | grep -w i.86 && { # upgrade apt and dpkg
