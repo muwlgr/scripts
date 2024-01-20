@@ -57,3 +57,4 @@ pkgs() { # $1 - architecture
 
 apt remove $(comm -12 <(pkgs i386) <(pkgs amd64) | sed 's/$/:i386/' ) #remove every :i386 pkg which has :amd64 equivalent installed
 apt autoremove # autoremove the rest
+dpkg --purge $(dpkg -l | awk '$4=="i386"&&$1=="rc"{print $2}')
