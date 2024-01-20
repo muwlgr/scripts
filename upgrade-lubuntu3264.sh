@@ -13,6 +13,11 @@ uname -m | grep i.86 && { # while we are under 32-bit kernel
  reboot
 }
 
+dpkg -l acpid | grep -w i.86 && { # acpid can't complete its upgrade properly
+ apt install acpid
+ systemctl --failed | grep acpid && reboot
+}
+
 dpkg -l dpkg | grep -w i.86 && { # upgrade apt and dpkg
  apt install apt:amd64 apt-utils:amd64 dpkg:amd64
  apt update
@@ -25,7 +30,6 @@ apt autoremove
 dpkg -l systemd | grep -w i.86 && { # need to complete systemd upgrade before udev could be properly restarted
  apt install $(awk '$2=="install"&&$1~/systemd/{print $1}' $pfl | sed 's/:i386//')
 }
-
 
 #critical packages better to upgrade in advance
 apt install base-files:amd64 base-passwd:amd64 bash:amd64 bsdutils:amd64 coreutils:amd64 debianutils:amd64 diffutils:amd64 e2fsprogs:amd64 fdisk:amd64 findutils:amd64 grep:amd64 gzip:amd64 hostname:amd64 init:amd64 libc-bin:amd64 login:amd64 mount:amd64 ncurses-bin:amd64 sed:amd64 sudo:amd64 sysvinit-utils:amd64 tar:amd64 util-linux:amd64
