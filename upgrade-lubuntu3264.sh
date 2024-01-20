@@ -39,12 +39,14 @@ dpkg -l dash | grep -w i.86 && { # remove diverts before upgrading dash, https:/
  apt install dash:amd64
 }
 
-apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386) # upgrade the rest
-systemctl --failed | grep acpid && { # acpid bug at https://bugs.launchpad.net/ubuntu/+source/acpid/+bug/1760391
+dpkg -l acpid | grep -w i.86 && { # acpid upgrade bug at https://bugs.launchpad.net/ubuntu/+source/acpid/+bug/1760391
+ apt install acpid:amd64
  systemctl restart acpid.socket
  systemctl restart acpid
+ apt -f install
 }
-dpkg -l acpid | grep '^iF *acpid' && apt -f install
+
+apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386) # upgrade the rest
 apt autoremove
 
 pkgs() { # $1 - architecture
