@@ -5,9 +5,8 @@
 
 pfl=pkgs1.tmp
 
-dpkg --get-selections > $pfl
-
-uname -m | grep i.86 && {
+uname -m | grep i.86 && { # while we are under 32-bit kernel
+ dpkg --get-selections > $pfl # save installed package list
  dpkg --add-architecture amd64
  apt update
  apt install linux-image-generic:amd64 thermald:i386 # this will pull in iucode-tool:amd64, not runnable under i386, but this is not fatal
