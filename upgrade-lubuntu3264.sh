@@ -13,9 +13,8 @@ uname -m | grep i.86 && { # while we are under 32-bit kernel
  reboot
 }
 
-dpkg -l acpid | grep -w i.86 && { # acpid can't complete its upgrade properly, reinstall it
- apt remove acpid
-}
+# acpid can't complete its upgrade properly, reinstall it - https://bugs.launchpad.net/ubuntu/+source/acpid/+bug/1760391
+dpkg -l acpid | grep -w i.86 && apt remove acpid
 
 dpkg -l dpkg | grep -w i.86 && { # upgrade apt and dpkg
  apt install apt:amd64 apt-utils:amd64 dpkg:amd64
@@ -41,6 +40,11 @@ dpkg -l dash | grep -w i.86 && { # remove diverts before upgrading dash, https:/
 }
 
 apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386) # upgrade the rest
+systemctl --failed | grep acpid && { # acpid bug at https://bugs.launchpad.net/ubuntu/+source/acpid/+bug/1760391
+ systemctl restart acpid.socket
+ systemctl restart acpid
+}
+dpkg -l acpid | grep '^iF *acpid' && apt -f install
 apt autoremove
 
 pkgs() { # $1 - architecture
