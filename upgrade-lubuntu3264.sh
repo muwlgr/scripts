@@ -50,11 +50,10 @@ dpkg -l acpid | grep -w i.86 && { # acpid upgrade bug at https://bugs.launchpad.
 
 apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386) # upgrade the rest
 apt-mark auto $(cat $aapkg) # restore auto marks for apt autoremove
-apt autoremove
 
 pkgs() { # $1 - architecture
  dpkg -l | awk '$4=="'$1'"{print $2}' | awk -F: '{print $1}' | sort -u
 }
 
 apt remove $(comm -12 <(pkgs i386) <(pkgs amd64) | sed 's/$/:i386/' ) #remove every :i386 pkg which has :amd64 equivalent installed
-
+apt autoremove # autoremove the rest
