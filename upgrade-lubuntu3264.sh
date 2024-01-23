@@ -3,6 +3,21 @@
 # wget https://raw.githubusercontent.com/muwlgr/scripts/main/upgrade-lubuntu3264.sh
 # sudo bash upgrade-lubuntu3264.sh
 
+grep -w lm /proc/cpuinfo || {
+ echo long mode not supported on CPU
+ exit 1
+}
+
+[ $(awk '$1=="MemTotal:"{print $2}' /proc/meminfo) -lt $((1024**2*3/2)) ] && {
+ echo RAM is less than 1.5 GB
+ exit 1
+}
+
+[ $(df -P / | awk '$NF=="/"{print $4}') -lt $((1024**2*8)) ] && {
+ echo root FS has less than 8 GB free
+ exit 1
+}
+
 pfl=pkgs1.tmp
 aapkg=apt-auto.tmp
 
