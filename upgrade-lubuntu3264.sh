@@ -30,7 +30,7 @@ uname -m | grep i.86 && { # while we are under 32-bit kernel
  reboot
 }
 
-apt remove $(dpkg -l | egrep -i '(java|jdk|jre|libfm|cron|logrotate|libdaemon).*i386' | awk '{print $2}') # to avoid upgrade conflicts, will be reinstalled later
+apt remove $(dpkg -l | egrep -i '(java|jdk|jre|libfm|cron|logrotate|libunity).*i386' | awk '{print $2}') # to avoid upgrade conflicts, will be reinstalled later
 
 dpkg -l dpkg | grep -w i.86 && { # upgrade apt and dpkg
  apt install apt:amd64 apt-utils:amd64 dpkg:amd64
@@ -75,5 +75,6 @@ pkgs() { # $1 - architecture
 }
 
 apt remove $(comm -12 <(pkgs i386) <(pkgs amd64) | sed 's/$/:i386/' ) #remove every :i386 pkg which has :amd64 equivalent installed
+apt remove $(diff -Bbw <(grep -w install $pfl | sed 's/:i386//') <(dpkg --get-selections | grep -w install | sed 's/:amd64//' ) | awk '$1==">"{print $2}') # remove unneeded packages pulled in during upgrade
 apt autoremove # autoremove the rest
 dpkg --purge $(dpkg -l | awk '$4=="i386"&&$1=="rc"{print $2}')
