@@ -65,7 +65,7 @@ dpkg -l acpid | grep -w i.86 && { # acpid upgrade bug at https://bugs.launchpad.
  dpkg -l acpid | grep 'iF *acpid ' && apt -f install
 }
 
-apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386 | grep -v cndrvicups) # upgrade the rest
+apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386 | grep -v cndrvcups) # upgrade the rest
 apt-mark auto $(cat $aapkg) # restore auto marks for apt autoremove
 
 pkgs() { # $1 - architecture
