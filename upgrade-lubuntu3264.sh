@@ -30,7 +30,7 @@ uname -m | grep i.86 && { # while we are under 32-bit kernel
  reboot
 }
 
-apt remove $(dpkg -l | egrep -i '(java|jdk|jre|libfm).*i386' | awk '{print $2}')
+apt remove $(dpkg -l | egrep -i '(java|jdk|jre|libfm|cron|logrotate).*i386' | awk '{print $2}') # to avoid upgrade conflicts, will be reinstalled later
 
 dpkg -l dpkg | grep -w i.86 && { # upgrade apt and dpkg
  apt install apt:amd64 apt-utils:amd64 dpkg:amd64
@@ -42,7 +42,7 @@ apt -f install
 apt autoremove
 
 dpkg -l systemd | grep -w i.86 && { # need to complete systemd upgrade before udev could be properly restarted
- apt install $(awk '$2=="install"&&$1~/systemd/{print $1}' $pfl | sed 's/:i386//')
+ apt install $(awk '$2=="install"&&$1~/systemd/{print $1}' $pfl | grep -v cron | sed 's/:i386//')
 }
 
 #critical packages better to upgrade in advance
