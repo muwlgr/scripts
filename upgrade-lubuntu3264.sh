@@ -31,7 +31,7 @@ uname -m | grep i.86 && { # while we are under 32-bit kernel
 }
 
 apt remove $(dpkg -l | egrep -i '(java|jdk|jre|libfm|cron|logrotate|libunity).*i386' | awk '{print $2}') # to avoid upgrade conflicts, will be reinstalled later
-dpkg -l openjdk-11-jre-headless | grep -w i.86 || dpkg --purge openjdk-11-jre-headless
+dpkg -l openjdk-11-jre-headless | grep -w i.86 && dpkg --purge openjdk-11-jre-headless
 
 dpkg -l dpkg | grep -w i.86 && { # upgrade apt and dpkg
  apt install apt:amd64 apt-utils:amd64 dpkg:amd64
