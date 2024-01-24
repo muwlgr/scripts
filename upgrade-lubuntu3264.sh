@@ -65,9 +65,9 @@ dpkg -l acpid | grep -w i.86 && { # acpid upgrade bug at https://bugs.launchpad.
  dpkg -l acpid | grep 'iF *acpid ' && apt -f install
 }
 
-apt install $(dpkg -l | awk '$4=="i386"&&$1=="ii"{print $2}' | grep -v cndrvcups | awk -F: '{print $1":amd64"}') # explicit install all amd64 versions where i386 is still installed
+apt install $(dpkg -l | awk '$4=="i386"&&$1=="ii"{print $2}' | egrep -v 'cndrvcups|google-chrome' | awk -F: '{print $1":amd64"}') # explicit install all amd64 versions where i386 is still installed
 apt autoremove 
-apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386 | grep -v cndrvcups) # upgrade the rest
+apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386 | egrep -v 'cndrvcups|google-chrome') # upgrade the rest
 apt-mark auto $(cat $aapkg) # restore auto marks for apt autoremove
 
 pkgs() { # $1 - architecture
