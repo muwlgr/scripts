@@ -46,7 +46,7 @@ dpkg -l systemd | grep -w i.86 && { # need to complete systemd upgrade before ud
 }
 
 #critical packages better to upgrade in advance
-apt install $(egrep '^(base-files|base-passwd|bash|bsdutils|coreutils|debianutils|diffutils|e2fsprogs|fdisk|findutils|grep|gzip|hostname|init|libc-bin|login|mount|ncurses-bin|sed|sudo|sysvinit-utils|tar|util-linux)\s+install$' $pfl | 
+apt install $(egrep '^(adduser|base-files|base-passwd|bash|bsdutils|coreutils|debianutils|diffutils|e2fsprogs|fdisk|findutils|grep|gzip|hostname|init|libc-bin|login|mount|ncurses-bin|passwd|sed|sudo|sysvinit-utils|tar|util-linux)\s+install$' $pfl | 
               awk '{print $1":amd64"}')
 apt autoremove
 
