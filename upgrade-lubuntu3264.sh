@@ -30,7 +30,7 @@ uname -m | grep i.86 && { # while we are under 32-bit kernel
  reboot
 }
 
-apt remove $(dpkg -l | egrep -i '(java|jdk|jre|libfm|cron|logrotate).*i386' | awk '{print $2}') # to avoid upgrade conflicts, will be reinstalled later
+apt remove $(dpkg -l | egrep -i '(java|jdk|jre|libfm|cron|logrotate|libdaemon).*i386' | awk '{print $2}') # to avoid upgrade conflicts, will be reinstalled later
 
 dpkg -l dpkg | grep -w i.86 && { # upgrade apt and dpkg
  apt install apt:amd64 apt-utils:amd64 dpkg:amd64
@@ -42,11 +42,11 @@ apt -f install
 apt autoremove
 
 dpkg -l systemd | grep -w i.86 && { # need to complete systemd upgrade before udev could be properly restarted
- apt install $(awk '$2=="install"&&$1~/systemd/{print $1}' $pfl | grep -v cron | sed 's/:i386//')
+ apt install $(awk '$2=="install"&&$1~/systemd/{print $1}' $pfl | grep -v cron | sed 's/:i386/:amd64/')
 }
 
 #critical packages better to upgrade in advance
-apt install $(egrep '^(adduser|base-files|base-passwd|bash|bsdutils|coreutils|debianutils|diffutils|e2fsprogs|fdisk|findutils|grep|gzip|hostname|init|libc-bin|login|mount|ncurses-bin|passwd|sed|sudo|sysvinit-utils|tar|util-linux)\s+install$' $pfl | 
+apt install $(egrep '^(base-files|base-passwd|bash|bsdutils|coreutils|debianutils|diffutils|e2fsprogs|fdisk|findutils|grep|gzip|hostname|init|libc-bin|login|mount|ncurses-bin|sed|sudo|sysvinit-utils|tar|util-linux)\s+install$' $pfl | 
               awk '{print $1":amd64"}')
 apt autoremove
 
@@ -65,6 +65,8 @@ dpkg -l acpid | grep -w i.86 && { # acpid upgrade bug at https://bugs.launchpad.
  dpkg -l acpid | grep 'iF *acpid ' && apt -f install
 }
 
+apt install $(dpkg -l | awk '$4=="i386"&&$1=="ii"{print $2}' | awk -F: '{print $1":amd64"}') # explicit install all amd64 versions where i386 is still installed
+apt autoremove 
 apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386 | grep -v cndrvcups) # upgrade the rest
 apt-mark auto $(cat $aapkg) # restore auto marks for apt autoremove
 
