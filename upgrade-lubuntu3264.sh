@@ -37,26 +37,39 @@ uname -m | grep i.86 && { # while we are under 32-bit kernel
 }
 
 apt remove $(dpkg -l | 
-             egrep -i '^ii .*(java|jdk|jre|libfm|cron|logrotate|libunity|upower|hplip|hpaio|lvm2|wine|system-config-date|xfburn|light|python).* i386 ' | # add your own patterns for egrep
+             egrep -i '^ii *(anydesk|lib(fm4(|-(extra4|gtk4|modules))|menu-cache(3|-bin)|systemd-(daemon0|login0))|lx(hotkey-(core|gtk|plugin-openbox)|shortcut)|openbox-menu|pcmanfm)( |:i386) *.* *i386 ' | 
+             awk '{print $2}')
+apt autoremove
+apt remove $(dpkg -l | 
+             egrep -i '^ii .*(java|jdk|jre|libfm|cron|logrotate|libunity|upower|hplip|hpaio|lvm2|wine|system-config-date|xfburn|light|python|libexo|xfce|drvcups|mountall|plymouth).* i386 ' | # add your own patterns for egrep
              awk '{print $2}') # to avoid upgrade conflicts, will be reinstalled later
+apt autoremove
 dpkg -l openjdk-11-jre-headless | grep -w i.86 && dpkg --purge openjdk-11-jre-headless # this 
-dpkg -l libkmod2 | grep -w i.86 && rm -v /usr/share/doc/libkmod2/changelog.Debian.gz   # and this is my findings coded explicitly to avoid upgrade conflicts
+fn=/usr/share/doc/libkmod2/changelog.Debian.gz
+dpkg -l libkmod2 | grep -w i.86 && [ -f $fn ] && rm -v $fn || :   # and this is my findings coded explicitly to avoid upgrade conflicts
 
 dpkg -l dpkg | grep -w i.86 && { # upgrade apt and dpkg
  apt install apt:amd64 apt-utils:amd64 dpkg:amd64
  apt update
 }
 
+dpkg -r $(dpkg -l | awk '$1=="ii"&&$4=="i386"{print $2}') ||
 apt -f install # this will upgrade perl-base:i386 to :amd64
 apt autoremove
 
 dpkg -l acpid | grep -w i.86 && { # acpid upgrade bug at https://bugs.launchpad.net/ubuntu/+source/acpid/+bug/1760391
- apt install acpid:amd64
- systemctl --failed | grep acpid && {
-  systemctl restart acpid.socket
-  systemctl restart acpid 
+ apt install acpid:amd64 || {
+  systemctl --failed | grep acpid && {
+   systemctl restart acpid.socket
+   systemctl restart acpid 
+  }
  }
  dpkg -l acpid | grep 'iF *acpid ' && apt -f install
+}
+
+dpkg -l bind9-host | grep -w i.86 && {
+ apt install bind9-host:amd64
+ apt autoremove
 }
 
 # to avoid being cut off the network. move this higher if you wish. may be even higher that apt/dpkg upgrade.
@@ -80,25 +93,27 @@ dpkg -l dash | grep -w i.86 && { # remove diverts before upgrading dash, https:/
 # upgrade all running i386 executables, including udev
 z="$(dpkg -l $(lsof -n | sed -n '/ txt /{s_^.* /_/_;s_^/usr/_/_;p}' | sort -u | grep -v '/proc/.*/exe' |
                fgrep -f - /var/lib/dpkg/info/*.list | sed 's/\.list:.*//;s_.*/__' | sort -u) | 
-     grep -w i.86 | awk '{print $2}' | sed 's/:i386//;s/$/:amd64/')"
+     grep -w i.86 | awk '{print $2}' | egrep -v 'cramfs|gcc-4|gnome-|gstreamer|insserv' |  sed 's/:i386//;s/$/:amd64/')"
 [ "$z" ] && {
  apt install $z
  apt -f install
+ apt autoremove
 }
 
 pkgs() { # $1 - architecture
  dpkg -l | awk '$4=="'$1'" && $1=="ii"{print $2}' | awk -F: '{print $1}' | sort -u
 }
 
-apt install $(dpkg -l | awk '$4=="i386" && $1=="ii" && $2!~/^lib/{print $2}' | sed 's/:i386/:amd64/') # upgrade all non-library packages
+apt install $(dpkg -l | awk '$4=="i386" && $1=="ii" && $2!~/^lib/{print $2}' | egrep -v 'cramfs|gcc-4|gnome-|gstreamer|hotkeys|insserv|oxideqt' | sed 's/:i386/:amd64/') # upgrade all non-library packages
+apt remove libc6:i386
 apt autoremove
-apt install $(dpkg -l | awk '$4=="i386" && $1=="ii" && $2~/^lib/{print $2}' | sed 's/:i386/:amd64/') # then libraries
-apt autoremove
+#apt install $(dpkg -l | awk '$4=="i386" && $1=="ii" && $2~/^lib/{print $2}' | egrep -v 'cramfs|gcc-4|gnome-|gstreamer|insserv|libapt-|miniupnp|tidy|bluray|ebml|matroska|icu55|mysqlclient|libts|tsconf|lib(ass|audcore|av|bind|boost|cdio|cgm|crypt|dir|dns|dvb|ebook|edata|ept|event|farstr|[ghijx])' | sed 's/:i386/:amd64/') # then libraries
+#apt autoremove
 
-pfilter='drvcups|google-chrome|miniupnp|insserv|gstreamer|gksu|png12|anydesk|kyocera|audcore|plymouth|hotkeys|gnome-search|gtop|cramfs|cgmanager|xfce4|xtables|vte|mountall|gnomekeyring|gudev|python-support|system-config-date|ubuntu-extras-keyring|icu5|heirloom|gcc-4.9|adobe-flash|gecko|gutenprint|toshset|^lib[abcdeghijlmopqstuvwx]|oxideqt|gnome-mplayer|^lib(readline|rtmp|farstream)|initscripts|sysv-rc|wine|cque|unetbootin|ubuntu-software-center|skype|ualinux|linux-.*4\.4\.0|eusw|esound-common' # add more stray packages to this list if you get 'exit 1' from failed 'apt install' commands below
+pfilter='drvcups|google-chrome|miniupnp|insserv|gstreamer|gksu|png12|anydesk|kyocera|audcore|plymouth|hotkeys|gnome-search|gtop|cramfs|cgmanager|xfce4|xtables|vte|mountall|gnomekeyring|gudev|python-support|system-config-date|ubuntu-extras-keyring|icu5|heirloom|gcc-4.9|adobe-flash|gecko|gutenprint|toshset|^lib[abcdeghijlmopqstuvwx]|oxideqt|gnome-mplayer|^lib(readline|rtmp|farstream)|initscripts|sysv-rc|wine|cque|unetbootin|ubuntu-software-center|skype|ualinux|linux-.*4\.4\.0|eusw|esound-common|teamviewer|packagekit' # add more stray packages to this list if you get 'exit 1' from failed 'apt install' commands below
 apt install $(dpkg -l $(awk '$2=="install"{print $1}' $pfl | awk -F: '{print $1}') | 
               tail -n +$((1+$(dpkg -l | grep -n '====' | awk -F: '{print $1}'))) | 
-              awk '$4=="i386"||$1!="ii"{print $2}' | egrep -v $pfilter | grep -v binutils | sed 's/:i386/:amd64/') || exit 1
+              awk '$4=="i386"||$1!="ii"{print $2}' | egrep -v $pfilter | egrep -v 'binutils|linux-[im]' | sed 's/:i386/:amd64/') || exit 1
 apt autoremove 
 apt install $(awk '$2=="install"{print $1}' $pfl | grep -v :i386 | egrep -v $pfilter | grep -v binutils ) || exit 1 # upgrade the rest
 apt-mark auto $(comm -23 $aapkg <(apt-mark showauto | sed 's/:.*//' | sort -u)) # restore auto marks for apt autoremove
