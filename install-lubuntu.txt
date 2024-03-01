@@ -22,10 +22,14 @@ mkdir /tmp/${DEV}2
 mount /dev/${DEV}2 /tmp/${DEV}2
 ( cd /tmp/${DEV}2
   time debootstrap --arch=i386 bionic . http://ua.archive.ubuntu.com/ubuntu
+  # http_proxy=http://192.168.77.65:3128 time eatmydata debootstrap bookworm . http://debian.volia.net/debian
   du -sh .
+  [ -f /etc/apt/apt.conf.d/99proxy ] && cp -av /etc/apt/apt.conf.d/99proxy etc/apt/apt.conf.d/
   cd root 
   wget https://github.com/muwlgr/scripts/raw/main/runme.sh
-  wget https://github.com/muwlgr/scripts/raw/main/complete-lubuntu.sh )
+  wget https://github.com/muwlgr/scripts/raw/main/complete-lubuntu.sh 
+  # wget https://github.com/muwlgr/scripts/raw/main/complete-debian.sh 
+)
 export DEV
 cd -
 sh /tmp/${DEV}2/root/runme.sh

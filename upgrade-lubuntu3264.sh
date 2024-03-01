@@ -81,7 +81,7 @@ dpkg -l systemd | grep -w i.86 && apt install $(dpkg -l | egrep '^ii +.*systemd.
 
 #critical packages better to upgrade in advance
 apt install $(dpkg -l | 
-              egrep '^ii +(base-files|base-passwd|bash|bsdutils|coreutils|debianutils|diffutils|e2fsprogs|fdisk|findutils|grep|gzip|hostname|init|libc-bin|login|mount|ncurses-bin|sed|sysvinit-utils|tar|util-linux)[: ].*i386 ' | 
+              egrep '^ii +(base-files|base-passwd|bash|bsdutils|coreutils|debianutils|diffutils|e2fsprogs|fdisk|findutils|grep|gzip|hostname|init|kmod|libc-bin|login|mount|ncurses-bin|sed|sysvinit-utils|tar|util-linux)[: ].*i386 ' | 
               awk '{print $2}' | sed 's/:i386//;s/$/:amd64/')
 
 dpkg -l dash | grep -w i.86 && { # remove diverts before upgrading dash, https://askubuntu.com/questions/81824
