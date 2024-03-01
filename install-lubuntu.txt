@@ -28,7 +28,8 @@ mount /dev/${DEV}2 /tmp/${DEV}2
   cd root 
   wget https://github.com/muwlgr/scripts/raw/main/runme.sh
   wget https://github.com/muwlgr/scripts/raw/main/complete-lubuntu.sh 
-  # wget https://github.com/muwlgr/scripts/raw/main/complete-debian.sh 
+  # wget https://raw.githubusercontent.com/muwlgr/scripts/main/complete-debian.sh
+  # wget https://raw.githubusercontent.com/muwlgr/scripts/main/install-lubuntu-on-bookworm.sh 
 )
 export DEV
 cd -

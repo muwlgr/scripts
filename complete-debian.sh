@@ -12,7 +12,7 @@ set -x -e
   echo tmpfs /tmp tmpfs defaults 0 0 
 } >> /etc/fstab
 #prepare boot folder on FAT
-mkdir /mnt/boot
+[ -d /mnt/boot ] || mkdir /mnt/boot
 mount /mnt/boot
 ( cd /mnt/boot
   for d in debian-boot EFI
