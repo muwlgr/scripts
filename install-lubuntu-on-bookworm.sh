@@ -64,3 +64,4 @@ fgrep exim pkg* || eatmydata apt remove $(dpkg -l | grep exim | awk '{print $2}'
 apt autoremove
 
 sed -i '/#greeter-hide-users=false/s/^#//' /etc/lightdm/lightdm.conf
+id user | grep lpadmin || adduser user lpadmin

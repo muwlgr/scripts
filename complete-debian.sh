@@ -20,6 +20,7 @@ mount /mnt/boot
   done
 )
 mount /boot
+[ -d /boot/efi ] || mkdir /boot/efi
 mount /boot/efi
 
 gen_debian_list() { # $1 - deb or deb-src, $2 - mirror URL, $3 - suite name , $4 - sections , $5 - sec.upd. url/path
@@ -35,9 +36,9 @@ gen_debian_list_bookworm() { # $1 - deb or deb-src, $2 - mirror URL, $3 - distro
  gen_debian_list $1 $2 $3 'main contrib non-free non-free-firmware' 'http://security.debian.org/debian-security '$3'-security' # added section non-free-firmware
 }
 
-apt install eatmydata locales sudo
+apt install eatmydata locales sudo wget
 echo Europe/Kyiv > /etc/timezone
-sed -r -i '/^ *(en_US|ru_|uk_UA).* *UTF-8/s/^# *//' /etc/locale.gen
+sed -r -i '/^# *(en_US|ru_|uk_UA).* *UTF-8/s/^# *//' /etc/locale.gen
 
 set -- $(cat /etc/apt/sources.list)
 sed -i '/^ *deb/s/^/#/' /etc/apt/sources.list
@@ -54,11 +55,11 @@ eatmydata apt autoremove
 eatmydata apt install linux-image-amd64 grub-pc # this will pull in grub-pc , install it into /dev/$DEV
 ird=$(find /boot/ -type f -iname 'initrd.img*' | xargs ls -t | head -n1)
 eatmydata apt install dosfstools # this will update initrd
-echo GRUB_CMDLINE_LINUX_DEFAULT=\"root=$(awk '$2=="/"{print $1}' /etc/fstab)\" >> /etc/default/grub
+#echo GRUB_CMDLINE_LINUX_DEFAULT=\"root=$(awk '$2=="/"{print $1}' /etc/fstab)\" >> /etc/default/grub
 grub-install /dev/$DEV # install into MBR
 update-grub
 
 adduser office
 adduser user
 adduser user sudo
-adduser user lpadmin
+#adduser user lpadmin
