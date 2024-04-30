@@ -124,7 +124,7 @@ main(){ # called recursively for upgrade without reboot
 
    apt install $(pvcat $ulist) $(cat $mlist) 
    ( cd $ulist
-     [ -f gdm3 ] && mv gdm3 $ulist2/ ) || : # don't allow to remove it
+     [ -f gdm3 ] && mv gdm3 $ulist2/ || : ) # don't allow to remove it
    [ -s /tmp/locale.gen ] && comm -23 /tmp/locale.gen <(grep '^[A-Za-z]' /etc/locale.gen | sort -u) >> /etc/locale.gen
    tail /etc/locale.gen
    apt install $(pvcat $ulist2) # dangerous upgrades of libc6/locales
@@ -149,13 +149,15 @@ main(){ # called recursively for upgrade without reboot
    
    ulist4=$(mktemp -d)
    diff <(awk '$2=="install"{print $1}' $pfl | 
-       awk -F: '{print $1}') <(dpkg --get-selections | awk '$2=="install"{print $1}' |
-                               awk -F: '{print $1}') | awk '$1=="<"{print $2}' |
+          awk -F: '{print $1}') <(dpkg --get-selections | 
+                                  awk '$2=="install"{print $1}' |
+                                  awk -F: '{print $1}') | 
+   awk '$1=="<"{print $2}' |
    ( cd $ulist
      mv -v $(ls $(cat)) $ulist4/ || : )
    apt install $(pvcat $ulist4) # install what could potentially have been removed
    
-   rm -rv $ulist $ulist4
+   rm -rv $ulist $ulist4 $krlist
 
   ;;
  esac
