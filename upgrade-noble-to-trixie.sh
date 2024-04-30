@@ -31,6 +31,13 @@ debian_quick_upgrade(){ # $1 - old distro, $2 - new distro , $3 - arch , $4 - de
 # reboot
 }
 
+pvcat(){ # $1 - folder
+ cd $1 
+ for p in * 
+ do echo $p=$(cat $p)
+ done
+}
+
 debmir=http://debian.volia.net/debian
 
 arch='x'
@@ -39,27 +46,38 @@ case $(uname -m) in
  x86_64) arch=amd64 ;;
 esac
 
+distro=trixie
+olddistro=noble
 pfl=pkg-noble.tmp
 aapkg=aapkg-noble.tmp
+flist=$(pwd)/dpkg-l.tmp
+ulist=$(mktemp -d)
 
 main(){ # called recursively for upgrade without reboot
  type lsb_release || apt install lsb-release
  case $(lsb_release -sc) in
   noble)
-   olddistro=noble
    # save package lists and states
    [ -f $pfl ] || dpkg --get-selections > $pfl
    [ -f $aapkg ] || apt-mark showauto | sed 's/:.*//' | sort -u > $aapkg
+   [ -s $flist ] || dpkg -l > $flist
 
    # revert some ubuntu customizations
+   dpkg -l | grep language-pack && ls /var/lib/locales/supported.d/* && sort -u /var/lib/locales/supported.d/* | grep '^[A-Za-z]' > /tmp/locale.gen
    find /etc/profile.d -type f | xargs grep -l '^eval .*locale-check' | while read l
    do sed -r -i '/^ *eval .*locale-check/s/^/#/' $l
    done
-   apt remove $(dpkg -l | egrep -i 'appstream|fcitx|zjs|gnome-|abiword|gnumeric|manpages|mailcap|mime-support|usb-creator|fwupd|transmission|plym|audacious|xf[bc]|system-config|indicator|firefox|gdebi|language-pack|linux-firmware|gstreamer-plugins|pulse|chromaprint|freerdp|pidgin|purple|gudev|[ b]gconf|nmap|lib(input|wacom|qt)|ry-cu' | awk '{print $2}' )
-   apt purge $(dpkg -l | egrep -i ' (ubuntu-advantage-tools|snapd) ' | awk '{print $2}')
+   ( cd /etc
+     for i in passwd group shadow gshadow
+     do grep '^gdm:' $i && ! grep '^Debian-gdm:' $i && echo Debian-$(grep '^gdm:' $i) >> $i || : # debian gdm3 hack
+     done )
+
+   type snap && snap remove firefox snapd-desktop-integration # this damned crap prevents snapd from being purged
+   apt purge $(dpkg -l | egrep -i 'ii +(ubuntu-advantage-tools|ubuntu-pro-client|apparmor) ' | awk '{print $2}')
+   apt remove $(dpkg -l | egrep -i 'ii +(snapd) .*build' | awk '{print $2}')
+   apt remove $(dpkg -l | egrep -i '(fcitx|abiword|gnumeric|manpages|mailcap|mime-support|usb-creator|fwupd|transmission|plym|audacious|xf[bc]|system-config|gnome-control|indicator|firefox|gdebi|language-pack|linux-firmware|chromaprint|freerdp|pidgin|purple|[ b]gconf|nmap|lib(qt)|ry-cu|(ubuntu|gnome-user)-docs|ps-br|rsyslog| cups |me-us|ud-in).*ubuntu|on-data-server .*3.52.0' | awk '{print $2}' )
    apt autoremove
 
-   distro=trixie
    dpkg -l | grep '^ii *debian-archive-keyring ' || {
     set -- $(wget -O - https://packages.debian.org/$distro/all/debian-archive-keyring/download | grep -io 'http.*all\.deb' | sort -u) # get package name from its DL page
     wget $1
@@ -75,17 +93,26 @@ main(){ # called recursively for upgrade without reboot
     }
    }
 
-   flist=$(mktemp)
-   ulist=$(mktemp -d)
-   dpkg -l | grep -v base-files > $flist
-   awk '$1=="ii"{print $2,$3}' $flist | # list all we have
+   awk '$1=="ii"{print $2,$3}' $flist | # list all we had initially
    while read pp ubuv # for every installed package
    do [ -f $ulist/$pp ] && continue
-      apt-cache show $pp | awk '$1=="Version:" && $2!="'$ubuv'" {print $2}' | sort -V | tail -n1 | # find its Debian upgrade version
+      apt-cache showpkg $pp | grep $distro'.*Packages' | grep -v '^ ' | sed 's/ (.*//' | sort -V | tail -n1 | # find its Debian upgrade version
       while read debv
       do echo $debv > $ulist/$pp # record this version to be installed for this package name
       done
-   done
+   done # so in $ulist we have only packages which have Debian version
+
+   ulist0=$(mktemp -d) # apt & dpkg
+   ( cd $ulist 
+     mv -v $(ls apt* dpkg* *eatmydata* ) $ulist0/ ) # upgrade them first
+   apt install $(pvcat $ulist0) # upgrade apt and dpkg
+   apt update
+   ulist2=$(mktemp -d) # libc6 & locales
+   ( cd $ulist 
+     mv -v $(ls libc6* libc-* locales cloud*) $ulist2/ ) # postpone breaking upgrades
+   ulist3=$(mktemp -d) # base-files
+   ( cd $ulist
+     mv -v base-files $ulist3/ ) # postpone breaking upgrades
 
    mlist=$(mktemp) # install some debian&hardware-specific pkgs
    lspci | grep -i realtek && echo firmware-realtek >> $mlist
@@ -93,25 +120,43 @@ main(){ # called recursively for upgrade without reboot
    lspci | egrep -i 'vga.*(intel|nvidia)' && echo firmware-misc-nonfree >> $mlist
    dpkg -l | grep -i linux-header && echo linux-headers-$arch >> $mlist
    echo linux-image-$arch >> $mlist
+   grep 'ii *gnome-session-bin ' $flist && echo gnome-session >> $mlist
 
-   apt install $(cd $ulist 
-                 for p in * 
-                 do echo $p=$(cat $p)
-                 done) $(cat $mlist) ||
-   apt -f install
-   apt autoremove
-   rm -rv $flist $ulist $mlist
-
+   apt install $(pvcat $ulist) $(cat $mlist) 
+   ( cd $ulist
+     [ -f gdm3 ] && mv gdm3 $ulist2/ ) || : # don't allow to remove it
+   [ -s /tmp/locale.gen ] && comm -23 /tmp/locale.gen <(grep '^[A-Za-z]' /etc/locale.gen | sort -u) >> /etc/locale.gen
+   tail /etc/locale.gen
+   apt install $(pvcat $ulist2) # dangerous upgrades of libc6/locales
+   apt install $(pvcat $ulist3) # dangerous upgrade of base-files
+   rm -rv $ulist0 $mlist $ulist2 $ulist3
    debian_quick_upgrade $olddistro $distro $arch $debmir 
-   apt remove $(dpkg -l | egrep -i 'ubuntu-|n(et)?plan' | awk '{print $2}' )
-   apt autoremove
-   main
+   main # restart upgrade for trixie
   ;;
   trixie)
+
+   krlist=$(mktemp) # remove ubuntu's kernel
+   for i in $(dpkg -l | grep $(uname -r) | awk '{print $2}') 
+   do apt-cache showpkg $i | grep -i $distro || echo $i >> $krlist
+   done
+   
+   apt remove $(dpkg -l | egrep -i 'ubuntu-|n(et)?plan' | awk '{print $2}' ) $(cat $krlist)
+   apt autoremove
    apt upgrade || apt -f install
    apt autoremove
    apt dist-upgrade 
    apt autoremove
+   
+   ulist4=$(mktemp -d)
+   diff <(awk '$2=="install"{print $1}' $pfl | 
+       awk -F: '{print $1}') <(dpkg --get-selections | awk '$2=="install"{print $1}' |
+                               awk -F: '{print $1}') | awk '$1=="<"{print $2}' |
+   ( cd $ulist
+     mv -v $(ls $(cat)) $ulist4/ || : )
+   apt install $(pvcat $ulist4) # install what could potentially be removed
+   
+   rm -rv $ulist $ulist4
+
   ;;
  esac
 }
