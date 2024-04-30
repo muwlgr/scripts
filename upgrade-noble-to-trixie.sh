@@ -153,7 +153,7 @@ main(){ # called recursively for upgrade without reboot
                                awk -F: '{print $1}') | awk '$1=="<"{print $2}' |
    ( cd $ulist
      mv -v $(ls $(cat)) $ulist4/ || : )
-   apt install $(pvcat $ulist4) # install what could potentially had been removed
+   apt install $(pvcat $ulist4) # install what could potentially have been removed
    
    rm -rv $ulist $ulist4
 
