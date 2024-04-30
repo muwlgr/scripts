@@ -106,7 +106,7 @@ main(){ # called recursively for upgrade without reboot
    ( cd $ulist 
      mv -v $(ls apt* dpkg* *eatmydata* ) $ulist0/ ) # upgrade them first
    apt install $(pvcat $ulist0) # upgrade apt and dpkg
-   apt update
+   apt update # rebuild package DB with updated apt
    ulist2=$(mktemp -d) # libc6 & locales
    ( cd $ulist 
      mv -v $(ls libc6* libc-* locales cloud*) $ulist2/ ) # postpone breaking upgrades
@@ -153,7 +153,7 @@ main(){ # called recursively for upgrade without reboot
                                awk -F: '{print $1}') | awk '$1=="<"{print $2}' |
    ( cd $ulist
      mv -v $(ls $(cat)) $ulist4/ || : )
-   apt install $(pvcat $ulist4) # install what could potentially be removed
+   apt install $(pvcat $ulist4) # install what could potentially had been removed
    
    rm -rv $ulist $ulist4
 
