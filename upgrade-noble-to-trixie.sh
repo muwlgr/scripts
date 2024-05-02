@@ -38,10 +38,11 @@ debmir=http://debian.volia.net/debian
 
 distro=trixie
 olddistro=noble
-pfl=pkg-$olddistro.tmp
-aapkg=aapkg-$olddistro.tmp
+pfl=$(pwd)/pkg-$olddistro.tmp
+aapkg=$(pwd)/aapkg-$olddistro.tmp
 flist=$(pwd)/dpkg-l.tmp
-ulist=$(mktemp -d)
+ulist=$(pwd)/$distro-pkgv.tmp
+[ -d $ulist ] || mkdir -p $ulist
 
 main(){ # called recursively for upgrade without reboot
  type lsb_release || apt install lsb-release
@@ -63,8 +64,18 @@ main(){ # called recursively for upgrade without reboot
      done )
 
    dpkg -l | egrep -i '^ii +snapd .*build' && snap remove firefox snapd-desktop-integration # this damned crap prevents snapd from being purged
-   apt purge $(dpkg -l | egrep -i '^ii +(ubuntu-(advantage-tools|pro-client)|apparmor.*ubuntu.*) ' | awk '{print $2}')
-   apt remove $(dpkg -l | egrep -i '^ii +((snapd|.*on-data-server) .*build|gnome-control.*ubuntu|(ubuntu|gnome-user)-docs)' | awk '{print $2}')
+   eb=$(pwd)/etc-$olddistro.tar.gz
+   ( cd /var/lib/dpkg/info # resolve apparmor problems once and for all
+     fl=$(mktemp)
+     ls *conffiles | grep -v apparmor | xargs grep -il apparmor | xargs grep -h . | sort -u > $fl
+     [ -s $fl ] && {
+      [ -f $eb ] && mv -v $eb $eb.bak || :
+      tar -T $fl -czvf $eb
+      rm -v $fl
+     } || :
+     apt purge $(dpkg -l | egrep -i '^ii +(ubuntu-(advantage-tools|pro-client)|(apparmor|plasma-welcome).*ubuntu.*) ' | awk '{print $2}') $(ls *conffiles | grep -v apparmor | xargs grep -il apparmor | awk -F. '{print $1}')
+   )
+   apt remove $(dpkg -l | egrep -i '^ii +((snapd|.*on-data-server|libwinpr.*t64.*) .*build|((konversation|libkf5(baloowidgets|holidays|kdegames))-data|gnome-control).*ubuntu|(ubuntu|gnome-user)-docs|language-pack|.*(pd-si|gphoto|gutenprint|op-pr|ot-db|sb-cr|eo-qx))' | awk '{print $2}')
 
    apt autoremove
 
@@ -83,29 +94,37 @@ main(){ # called recursively for upgrade without reboot
     }
    }
 
-   awk '$1=="ii"{print $2,$3}' $flist | # list all we had initially
-   while read pp ubuv # for every installed package
-   do [ -f $ulist/$pp ] && continue
-      apt-cache showpkg $pp | grep $distro'.*Packages' | grep -v '^ ' | sed 's/ (.*//' | sort -V | tail -n1 | # find its Debian upgrade version
-      while read debv
-      do [ $debv = $ubuv ] || echo $debv > $ulist/$pp # record this version to be installed for this package name
-      done
-   done # so in $ulist we have only packages which have Debian version
+   dpkg -l | awk '$1=="ii"{print $2,$3}' | # list all we have currently
+   ( cd $ulist
+     while read pp ubuv # for every installed package
+     do [ -f $pp ] && continue
+        apt-cache showpkg $pp | grep $distro'.*Packages' | grep -v '^ ' | sed 's/ (.*//' | sort -V | tail -n1 | # find its Debian upgrade version
+        while read debv
+        do [ $debv = $ubuv ] || echo $debv > $pp # record this version to be installed for this package name
+        done
+     done ) # so in $ulist we have only packages which have Debian version
 
    ulist0=$(mktemp -d) # apt & dpkg
    ( cd $ulist 
+     [ -f apt-utils ] || cp -av apt apt-utils # install apt-utils of the same version as apt
      mv -v $(ls apt* dpkg* *eatmydata* ) $ulist0/ ) # upgrade them first
-   ( cd $ulist0
-     [ -f apt-utils ] || cp -av apt apt-utils ) # install apt-utils of the same version as apt
    apt install $(pvcat $ulist0) # upgrade apt and dpkg
+   rm -rv $ulist0
    apt update # rebuild package DB with updated apt
+
+   ulist05=$(mktemp -d)
+   ( cd $ulist
+     ls *shim-signed* && mv *shim-signed* $ulist05/ ) # separate upgrade of shim-signed
+   apt install $(pvcat $ulist05) || apt -f install # restart apt on unpacking conflict
+   rm -rv $ulist05
 
    ulist2=$(mktemp -d) # libc6 & locales
    ( cd $ulist 
-     mv -v $(ls libc6* libc-* locales cloud*) $ulist2/ ) # postpone breaking upgrades
+     mv -v $(ls libc6* libc-* locales cloud*) $ulist2/ # postpone breaking upgrade of libc6+locales
+     [ -f gdm3 ] && ln -v gdm3 $ulist2/ || : ) # also prevent gdm3 from being removed
    ulist3=$(mktemp -d) # base-files
    ( cd $ulist
-     mv -v base-files $ulist3/ ) # postpone breaking upgrades
+     mv -v base-files $ulist3/ ) # postpone breaking upgrade of base-files
 
    mlist=$(mktemp) # install some debian&hardware-specific pkgs
    lspci | grep -i realtek && echo firmware-realtek >> $mlist
@@ -116,49 +135,45 @@ main(){ # called recursively for upgrade without reboot
    echo linux-image-$arch >> $mlist
    grep 'ii *gnome-session-bin ' $flist && echo gnome-session >> $mlist
 
-   apt install $(pvcat $ulist) $(cat $mlist) 
-   ( cd $ulist
-     [ -f gdm3 ] && mv gdm3 $ulist2/ || : ) # don't allow to remove it
+   apt install $(pvcat $ulist) $(cat $mlist) # main upgrade
+   rm -rv $ulist $mlist
    [ -s /tmp/locale.gen ] && {
     comm -23 /tmp/locale.gen <(grep '^[A-Za-z]' /etc/locale.gen | sort -u) >> /etc/locale.gen
     tail /etc/locale.gen
    }
    apt remove $(dpkg -l | egrep -i 'n(et)?plan.*ubuntu|ubuntu-' | awk '{print $2}' )
    apt install $(pvcat $ulist2) # dangerous upgrades of libc6/locales
+   rm -rv $ulist2
    apt install $(pvcat $ulist3) # dangerous upgrade of base-files
-   rm -rv $ulist0 $ulist $mlist $ulist2 $ulist3
+   rm -rv $ulist3
    main # restart upgrade for trixie
   ;;
 
   $distro)
 
-   apt remove $(for i in $(dpkg -l | grep $(uname -r) | awk '{print $2}') 
+   apt remove $(dpkg -l | egrep -i '^ii +[^ ]+ +[^ ]*ubuntu[^ ]* ' | awk '{print $2}'
+                for i in $(dpkg -l | grep '^ii *.*'$(uname -r) | awk '{print $2}') 
                 do apt-cache showpkg $i | grep -iq $distro || echo $i 
                 done) # remove ubuntu's kernel
-   
+   apt autoremove
    apt dist-upgrade 
-
    apt install $(for i in $(comm -23 <(awk '$2=="install"{print $1}' $pfl | 
                                        awk -F: '{print $1}') <(dpkg --get-selections | awk '$2=="install"{print $1}' |
                                                                awk -F: '{print $1}') ) 
                  do apt-cache showpkg $i | grep -qi $distro && echo $i 
                  done)
-
-   
-   apt remove $(comm -23 <(dpkg -l | egrep -i 'exim|apache' | 
-                           awk '$1=="ii"{print$2}' | sort -u) <(egrep -i 'exim|apache' $pfl | 
-                                                                awk '$1=="ii"{print$2}' | sort -u)) # clean after Debian
-   apt autoremove
-
+   re='exim|apache|lynx|perl-tk|mailcap'
+   apt remove $(comm -23 <(dpkg -l | egrep -i $re | awk '$1=="ii"{print$2}' | awk -F: '{print $1}' |
+                           sort -u) <(egrep -i $re $flist | awk '$1=="ii"{print$2}' | awk -F: '{print $1}' |
+                                      sort -u)) # clean after Debian
   ;;
  esac
 }
 
 main
 
-diff <(awk '$2=="install"{print $1}' $pfl | 
-       awk -F: '{print $1}') <(dpkg --get-selections | awk '$2=="install"{print $1}' |
-                               awk -F: '{print $1}') # print what packages you have gained and lost for your review
+comm -3 <(awk '$2=="install"{print $1}' $pfl | 
+          awk -F: '{print $1}' | sort -u) <(dpkg --get-selections | awk '$2=="install"{print $1}' |
+                                  awk -F: '{print $1}' | sort -u) # print what packages you have gained and lost for your review
 
-dpkg -l $(awk '$1=="'$(date +%Y-%m-%d)'" && $3=="remove" {print $4}' /var/log/dpkg.log | awk -F: '{print $1}' | sort -u ) | fgrep -wv ii
-
+dpkg -l $(awk '$1=="ii"{print $2}' $flist  | awk -F: '{print $1}' ) | fgrep -vw ii
