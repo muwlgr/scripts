@@ -75,8 +75,7 @@ main(){ # called recursively for upgrade without reboot
      } || :
      apt purge $(dpkg -l | egrep -i '^ii +(ubuntu-(advantage-tools|pro-client)|(apparmor|plasma-welcome).*ubuntu.*) ' | awk '{print $2}') $(ls *conffiles | grep -v apparmor | xargs grep -il apparmor | awk -F. '{print $1}')
    )
-   apt remove $(dpkg -l | egrep -i '^ii +((snapd|.*on-data-server|libwinpr.*t64.*) .*build|((konversation|libkf5(baloowidgets|holidays|kdegames))-data|gnome-control).*ubuntu|(ubuntu|gnome-user)-docs|language-pack|.*(pd-si|gphoto|gutenprint|op-pr|ot-db|sb-cr|eo-qx))' | awk '{print $2}')
-
+   apt remove $(dpkg -l | egrep -i '^ii +((snapd|.*on-data-server|libwinpr.*t64.*) .*build|((konversation|libkf5(baloowidgets|holidays|kdegames))-data|gnome-control).*ubuntu|(ubuntu|gnome-user)-docs|language-(pack|select)|.*(pd-si|gphoto|gutenprint|op-pr|ot-db|sb-cr|eo-qx|ly-re))' | awk '{print $2}')
    apt autoremove
 
    dpkg -l | grep '^ii *debian-archive-keyring ' || {
@@ -94,7 +93,8 @@ main(){ # called recursively for upgrade without reboot
     }
    }
 
-   dpkg -l | awk '$1=="ii"{print $2,$3}' | # list all we have currently
+   
+   awk '{gsub(/:[^:]*/,"",$2);print $2,$3}' $flist | sort -u | # all we had initially
    ( cd $ulist
      while read pp ubuv # for every installed package
      do [ -f $pp ] && continue
@@ -137,11 +137,14 @@ main(){ # called recursively for upgrade without reboot
 
    apt install $(pvcat $ulist) $(cat $mlist) # main upgrade
    rm -rv $ulist $mlist
+   apt install $(for i in $(dpkg -l | egrep '^ii +lib.*t64.*(ubuntu|build)' | awk '{print $2}' | sed 's/t64.*//') # some Noble t64 libs need to be downgraded to Trixie non-t64
+                 do apt-cache showpkg $i | grep -qi $distro && echo $i
+                 done)
    [ -s /tmp/locale.gen ] && {
     comm -23 /tmp/locale.gen <(grep '^[A-Za-z]' /etc/locale.gen | sort -u) >> /etc/locale.gen
     tail /etc/locale.gen
    }
-   apt remove $(dpkg -l | egrep -i 'n(et)?plan.*ubuntu|ubuntu-' | awk '{print $2}' )
+   apt remove $(dpkg -l | egrep -i '^ii +n(et)?plan.*ubuntu|ubuntu-' | awk '{print $2}' )
    apt install $(pvcat $ulist2) # dangerous upgrades of libc6/locales
    rm -rv $ulist2
    apt install $(pvcat $ulist3) # dangerous upgrade of base-files
@@ -151,21 +154,22 @@ main(){ # called recursively for upgrade without reboot
 
   $distro)
 
-   apt remove $(dpkg -l | egrep -i '^ii +[^ ]+ +[^ ]*ubuntu[^ ]* ' | awk '{print $2}'
+   apt update # for new packages on repeated runs
+   apt remove $(dpkg -l | egrep -i '^ii +([^ ]+ +[^ ]*ubuntu[^ ]* |.*ub-gf)' | awk '{print $2}' # remove leftover ubuntu pkgs
                 for i in $(dpkg -l | grep '^ii *.*'$(uname -r) | awk '{print $2}') 
                 do apt-cache showpkg $i | grep -iq $distro || echo $i 
-                done) # remove ubuntu's kernel
-   apt autoremove
+                done) # and ubuntu's running kernel
    apt dist-upgrade 
-   apt install $(for i in $(comm -23 <(awk '$2=="install"{print $1}' $pfl | 
-                                       awk -F: '{print $1}') <(dpkg --get-selections | awk '$2=="install"{print $1}' |
+   apt install $(for i in $(comm -23 <(grep '^ii ' $flist | awk '{print $2}' |
+                                       awk -F: '{print $1}') <(dpkg -l | grep '^ii ' | awk '{print $2}' |
                                                                awk -F: '{print $1}') ) 
                  do apt-cache showpkg $i | grep -qi $distro && echo $i 
                  done)
-   re='exim|apache|lynx|perl-tk|mailcap'
-   apt remove $(comm -23 <(dpkg -l | egrep -i $re | awk '$1=="ii"{print$2}' | awk -F: '{print $1}' |
-                           sort -u) <(egrep -i $re $flist | awk '$1=="ii"{print$2}' | awk -F: '{print $1}' |
+   re='exim|apache|lynx|perl-tk|mailcap|sy-rs|pcscd|realmd| (tk[0-9.]+|tix) '
+   apt remove $(comm -23 <(dpkg -l | egrep -i "$re" | awk '$1=="ii"{print$2}' | awk -F: '{print $1}' |
+                           sort -u) <(egrep -i "$re" $flist | awk '$1=="ii"{print$2}' | awk -F: '{print $1}' |
                                       sort -u)) # clean after Debian
+   apt autoremove
   ;;
  esac
 }
