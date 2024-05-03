@@ -94,7 +94,7 @@ main(){ # called recursively for upgrade without reboot
    }
 
    
-   awk '{gsub(/:[^:]*/,"",$2);print $2,$3}' $flist | sort -u | # all we had initially
+   awk '$1=="ii"{gsub(/:[^:]*/,"",$2);print $2,$3}' $flist | sort -u | # all we had initially
    ( cd $ulist
      while read pp ubuv # for every installed package
      do [ -f $pp ] && continue
@@ -129,6 +129,7 @@ main(){ # called recursively for upgrade without reboot
    mlist=$(mktemp) # install some debian&hardware-specific pkgs
    lspci | grep -i realtek && echo firmware-realtek >> $mlist
    lspci | grep -i atheros && echo firmware-atheros >> $mlist
+   lspci | grep -i 'intel.*wifi' && echo firmware-iwlwifi >> $mlist
    lspci | egrep -i 'vga.*(intel|nvidia)' && echo firmware-misc-nonfree >> $mlist
    grep -i '^ii *linux-header' $flist && echo linux-headers-$arch >> $mlist
    grep -i '^ii *firefox .*snap.*ubuntu.*' $flist && echo firefox-esr >> $mlist
