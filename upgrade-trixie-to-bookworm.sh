@@ -119,7 +119,7 @@ main(){ # called recursively for upgrade without reboot
    apt update
    reinstall_so $solist "$(iigrep '.*' | grep -v base-files | newv $distro)"
    reinstall_so $solist "$(iigrep '.*' | grep -v base-files | newv $distro)" # this may need to be restarted to upgrade remaining pkgs
-   reinstall_so $solist "$(iigrep '.*t64.* ' | sed 's/t64//' | newv $distro)" # downgrade Ubuntu t64 libs to Debian's non-t64
+   reinstall_so $solist "$(iigrep '.*t64.* ' | sed 's/t64//' | newv $distro)" # downgrade Trixie t64 libs to Bookworm's non-t64
    apt install $(iigrep 'base-files' | newv $distro) # finally install base-files
    apt remove $(iigrep '(n(et)?plan.*ubuntu|.*(ubuntu|pd-si|op-pr|ub-gf)|(libaio|secureboot).* .*build)' | grep -v yaru )
    apt autoremove
