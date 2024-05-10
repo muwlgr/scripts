@@ -117,6 +117,7 @@ main(){ # called recursively for upgrade without reboot
    apt install $(iigrep 'libapt.*t64.*build' | sed 's/t64//' | newv $distro) # here we may lose libapt-pkg*.so, but reinstall_so would not help as it uses apt inside
    apt help || dpkg -i libapt-pkg*deb # dirty little fix
    rm -v libapt-pkg*deb
+   apt update
    reinstall_so $solist "$(iigrep '.*' | grep -v base-files | newv $distro)"
    reinstall_so $solist "$(iigrep '.*' | grep -v base-files | newv $distro)" # this may need to be restarted to upgrade remaining pkgs
    reinstall_so $solist "$(iigrep '.*t64.* .*(ubuntu|build)' | sed 's/t64//' | newv $distro)" # downgrade Ubuntu t64 libs to Debian's non-t64
