@@ -85,7 +85,6 @@ main(){ # called recursively for upgrade without reboot
    dpkg -l | egrep -i '^ii +snapd .*build' && snap remove firefox snapd-desktop-integration # this damned crap prevents snapd from being purged
    apt purge $(iigrep '(ubuntu-(advantage-tools|pro-client)|(apparmor|plasma-welcome|libplymouth5).*ubuntu.*) ') 
    apt remove $(iigrep '(.*(appstream|app-config-icons|printer-driver|xrender)).* .*build|(.*(baloowidget|pg-agent|libreoffice|uno-libs|flac|glib2|fontconfig|activi|kwayland)).* .*ubuntu|.*(ge-pa|xorg)')
-#   apt remove $(dpkg -l | egrep -i '^ii +((snapd|.*on-data-server|(lib((winpr.*t64|appstream)|gstreamer.*packagekit|xrender|gdbm|asound|sharpyuv|dw1|dconf|crack|stemmer|lmdb|lzo|magic|proxy|elf|gphoto|soup)|python3-distro-info|at-spi|dmidecode|rtkit|fcitx).*) .*build|((konversation|lib((kf5(baloowidgets|holidays|kde(games|libs4support)))-data|tss2|avahi|traceevent|accountsservice|ip4|glib|fontconfig|pcre2-16|uno-|canberra))|gnome-control|bluez|bpf|gdb|tpm-udev|pkexec|x11-common|yaru-theme|plasma-pa).* .*ubuntu|ubuntu-docs|language-select|python3-blinker|xz-utils|.*(pd-si|gutenprint|op-pr|ot-db|sb-cr|eo-qx|ly-re|ed-ad|ic-hw|ge-pa))' | awk '{print $2}')  net-tools pinentry-curses libc6:i386 libgcc-s1:i386 libidn2-0:i386 
    [ -s /tmp/locale.gen ] && {
     comm -23 /tmp/locale.gen <(grep '^[A-Za-z]' /etc/locale.gen | sort -u) >> /etc/locale.gen
     tail /etc/locale.gen
