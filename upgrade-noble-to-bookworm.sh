@@ -34,10 +34,6 @@ iigrep(){ # $1 - egrep regexp
  dpkg -l | egrep -i '^ii +('"$1"')' | awk '{gsub(/:[^:]*/,"",$2);print $2}'
 }
 
-listcol(){ # print positional args in 1 column
- echo $* | tr ' ' '\n' 
-}
-
 reinstall_so(){ # $1 - $solist, $2 - package list with versions pkg=ver
  [ "$2" ] || return 0
  apt install $2 || : # this may fail due to improperly removed .so libs
