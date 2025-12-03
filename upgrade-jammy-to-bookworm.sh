@@ -121,7 +121,7 @@ main(){ # called recursively for upgrade without reboot
    drop_sources $olddistro
    gen_debian_list_$distro deb $debmir $distro # some downgrades before quick upgrade
    set -- $(iigrep mysql-server)
-   [ $# -gt 0 ] && wget https://repo.mysql.com//mysql-apt-config_0.8.33-1_all.deb
+   [ $# -gt 0 ] && wget https://repo.mysql.com//mysql-apt-config_0.8.36-1_all.deb
    
    grep '^ii *eatmydata' $flist && apt install eatmydata
    [ -f $solist ] || ( cd /var/lib/dpkg/info 
