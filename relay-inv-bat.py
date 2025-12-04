@@ -22,6 +22,7 @@ def send_cmd(cmd, writer):
  raw_frame = b'~'+cmd+i16h(get_frame_checksum(cmd))+b'\r'
  print(['send_cmd', raw_frame])
  writer.write(raw_frame)
+ writer.flush()
 
 def get_frame_checksum(frame):
  sum = 0
@@ -72,8 +73,8 @@ def maxminind(arr):
  return [maxv, maxi, minv, mini] 
 
 def main():
- sinv = serial.Serial('/dev/ttyUSB1', 9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
- sbat = serial.Serial('/dev/ttyUSB0', 9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
+ sinv = serial.Serial(port='/dev/ttyUSB1', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
+ sbat = serial.Serial(port='/dev/ttyUSB0', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
 
  replace = {b'61' : b'42'} # replace map
  while True:
