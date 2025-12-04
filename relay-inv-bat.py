@@ -73,8 +73,8 @@ def maxminind(arr):
  return [maxv, maxi, minv, mini] 
 
 def main():
- sinv = serial.Serial(port='/dev/ttyUSB1', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
- sbat = serial.Serial(port='/dev/ttyUSB0', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
+ sinv = serial.Serial(port='/dev/serial/by-path/pci-0000:00:14.0-usb-0:5.1:1.0-port0', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
+ sbat = serial.Serial(port='/dev/serial/by-path/pci-0000:00:14.0-usb-0:1:1.0-port0', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
 
  replace = {b'61' : b'42'} # replace map
  while True:
