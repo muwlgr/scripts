@@ -52,6 +52,10 @@ def signed(i): # unsigned to signed short
  if i >= 32768: i -= 65536
  return i
 
+def unsigned(i): # signed to unsigned short
+ if i < 0: i += 65536
+ return i
+
 def maxminind(arr):
  minv=arr[0]
  maxv=arr[0]
@@ -67,8 +71,8 @@ def maxminind(arr):
  return [maxv, maxi, minv, mini] 
 
 async def main():
- rinv,winv = await serial_asyncio.open_serial_connection(url='/dev/ttyUSB0', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
- rbat,wbat = await serial_asyncio.open_serial_connection(url='/dev/ttyUSB1', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
+ rinv,winv = await serial_asyncio.open_serial_connection(url='/dev/ttyUSB1', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
+ rbat,wbat = await serial_asyncio.open_serial_connection(url='/dev/ttyUSB0', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
 
  replace = {b'61' : b'42'} # replace map
  while True:
@@ -105,9 +109,9 @@ async def main():
    cg=cvrutc.groups()
    if cg[-1]==b'' : cg=cg[:len(cg)-1]
    cg=[int(z, 16) for z in cg]
-   cg[0]=signed(cg[0]) # current is signed
+   #cg[0]=signed(cg[0]) # current is signed
 
-   print(['curr', cg[0], 'volt', cg[1], 'remcap', cg[2], 'udi', cg[3], 'totcap', cg[4], 'cycles', cg[5], 'len', len(cg)])
+   print(['curr', signed(cg[0]), 'volt', cg[1], 'remcap', cg[2], 'udi', cg[3], 'totcap', cg[4], 'cycles', cg[5], 'len', len(cg)])
 #now construct a response to command 61h :
    r0=b''.join([df[1], df[2], df[3], df[4]])
    soc=i8h((100*cg[2]-1)//cg[4])
@@ -115,7 +119,7 @@ async def main():
    mmiv=[i16h(i) for i in maxminind(cvs)]
    mmit=[i16h(i) for i in maxminind(temps)]
    faketemp=[i16h(temps[0])] + mmit
-   info=[i16h(cg[1]), i16h(cg[0]), soc, cyc, cyc, soc, soc] + mmiv + faketemp + faketemp + faketemp
+   info=[i16h(cg[1]), i16h(unsigned(signed(cg[0])//10)), soc, cyc, cyc, soc, soc] + mmiv + faketemp + faketemp + faketemp
    print(['info61', info, 'len', len(info)])
    joined_info=b''.join(info)
    print(['joined_info', joined_info])
