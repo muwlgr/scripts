@@ -1,6 +1,6 @@
 # borrowings from https://github.com/Frankkkkk/python-pylontech/blob/master/pylontech/pylontech.py
 
-import asyncio, serial, serial_asyncio, re
+import serial, re
 
 def i16h(i): # format i into 4 hexbin positions
     return '{:04X}'.format(i).encode()
@@ -43,8 +43,9 @@ def _decode_hw_frame(raw_frame):
 def _decode_frame(frame):
  return re.match(b'(..)(..)(..)(..)(....)(.*)', frame)
 
-async def read_frame(port):
- raw_frame = await port.readuntil(b'\r') # .readline() did not work with serial_asyncio
+def read_frame(port):
+ raw_frame = port.read_until(b'\r') # .readline() did not work with serial_asyncio
+# raw_frame = port.readline() # .readline() did not work with serial_asyncio
  print(['read_frame',raw_frame])
  return _decode_hw_frame(raw_frame)
 
@@ -70,14 +71,14 @@ def maxminind(arr):
          mini=i+1
  return [maxv, maxi, minv, mini] 
 
-async def main():
- rinv,winv = await serial_asyncio.open_serial_connection(url='/dev/ttyUSB1', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
- rbat,wbat = await serial_asyncio.open_serial_connection(url='/dev/ttyUSB0', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
+def main():
+ sinv = serial.Serial('/dev/ttyUSB1', 9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
+ sbat = serial.Serial('/dev/ttyUSB0', 9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
 
  replace = {b'61' : b'42'} # replace map
  while True:
   try:
-   c = await read_frame(rinv)
+   c = read_frame(sinv)
    df = _decode_frame(c)
    print(['rinv', df, df.groups(), df[4]])
    assert df[4] in replace, "unknown command" # fail on unfamiliar commands
@@ -85,9 +86,9 @@ async def main():
    l[3]=replace[df[4]]
    c=b''.join(l)
    print(['replaced command', c])
-   send_cmd(c, wbat)
+   send_cmd(c, sbat)
 
-   c = await read_frame(rbat)
+   c = read_frame(sbat)
    df = _decode_frame(c)
    print(['rbat', df, df.groups()])
    i = df[6]
@@ -127,8 +128,8 @@ async def main():
    print(['info_length', info_length])
    frame=r0+info_length+joined_info
    print(['resp61', frame])
-   send_cmd(frame, winv)
+   send_cmd(frame, sinv)
   except Exception as e:
    print(e)
 
-asyncio.run(main())
+if __name__ == '__main__' : main()
