@@ -1,4 +1,18 @@
 # borrowings from https://github.com/Frankkkkk/python-pylontech/blob/master/pylontech/pylontech.py
+# also with invaluable knowledge gained from https://github.com/Frankkkkk/python-pylontech/blob/master/RS485-protocol-pylon-low-voltage-V3.3-20180821.pdf
+# and from the combined manual in Ukrainian from https://greenpowertalk.tech/threads/komunikacija-invertora-anenji-6-2kw-i-batareji-dyness-b4850.1543/post-35618
+
+# how to use: 
+# on your Dyness B3, turn on only DIP2, the rest (1,3,4) leave turned off
+# on your inverter, ensure that your battery type is set as LIL or other type mentioning PYLON and RS485
+# get 2 USB-RS485 adapters, connect them to your inverter and battery, plug them into your Linux host, check their persistent names by running
+# ls -l /dev/serial/*/*
+# check what inverter sends using
+# cu -l /dev/serial/X/Y-port0 -s 9600
+# (find the proper inverter's port, and the other will be from the battery)
+# configure these port names in serial.Serial(...) constructors down in this script
+# and run it using python3 . remove debug printout when you stop needing it .
+# report observed problems to mwg@mwg.dp.ua or to https://greenpowertalk.tech/members/muwlgr.11768/
 
 import serial, re
 
