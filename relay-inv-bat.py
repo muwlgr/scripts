@@ -109,7 +109,7 @@ def main():
    print(['rinv', df.groups()])
    assert df[4] in replace, ["unknown command", df[4]] # fail on unfamiliar commands
    l=list(df.groups())
-   l[3]=replace[df[4]]
+   l[3]=replace[l[3]]
    c=b''.join(l)
    print(['replaced command', c])
    send_cmd(c, sbat)
@@ -137,7 +137,7 @@ def main():
 
    print(['curr', signed(cg[0]), 'volt', cg[1], 'remcap', cg[2], 'udi', cg[3], 'totcap', cg[4], 'cycles', cg[5], 'len', len(cg)]) # current is signed
 #now construct a response to command 61h :
-   r0=b''.join([df[1], df[2], df[3], df[4]]) # copy inverter's request header into the response (probably worth to replace df[4] with b'00')
+   r0=b''.join([df[1], df[2], df[3], df[4]]) # copy battery's response header into the "synthetic" response
    soc=i8h((100*cg[2]-1)//cg[4])
    cyc=i16h(cg[5])
    mmiv=[i16h(i) for i in maxminind(cvs)] # create voltage array for 0x61 response
