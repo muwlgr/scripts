@@ -63,12 +63,12 @@ def get_info_length(info):
  lenid_modulo = lenid_sum % 16
  lenid_invert_plus_one = 0b1111 - lenid_modulo + 1
 
- return (lenid_invert_plus_one << 12) + lenid
+ return (lenid_invert_plus_one << 12) + lenid # copied from Frankkkkk
 
 def send_cmd(cmd, writer):
  raw_frame = b'~'+cmd+i16h(get_frame_checksum(cmd))+b'\r'
  print(['send_cmd', raw_frame])
- writer.write(raw_frame)
+ writer.write(raw_frame) # copied from Frankkkkk
 # writer.flush()
 
 def get_frame_checksum(frame):
@@ -77,7 +77,7 @@ def get_frame_checksum(frame):
  sum = ~sum
  sum %= 0x10000
  sum += 1
- return sum
+ return sum # copied from Frankkkkk
 
 def _decode_hw_frame(raw_frame):
  frame_data = raw_frame[1:len(raw_frame) - 5]
@@ -86,7 +86,7 @@ def _decode_hw_frame(raw_frame):
  got_frame_checksum = get_frame_checksum(frame_data)
  assert got_frame_checksum == int(frame_chksum, 16), "bad checksum"
 # print(['frame_data', frame_data])
- return frame_data
+ return frame_data # copied from Frankkkkk
 
 def _decode_frame(frame):
  return re.match(b'(..)(..)(..)(..)(....)(.*)', frame)
@@ -95,7 +95,7 @@ def read_frame(port):
  raw_frame = port.read_until(b'\r') # .readline() did not work with serial_asyncio
 # raw_frame = port.readline() # .readline() did not work with serial_asyncio
 # print(['read_frame',raw_frame])
- return _decode_hw_frame(raw_frame)
+ return _decode_hw_frame(raw_frame) # copied from Frankkkkk
 
 def main():
  sinv = serial.Serial(port='/dev/serial/by-path/pci-0000:00:14.0-usb-0:5.1:1.0-port0', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
@@ -137,21 +137,21 @@ def main():
 
    print(['curr', signed(cg[0]), 'volt', cg[1], 'remcap', cg[2], 'udi', cg[3], 'totcap', cg[4], 'cycles', cg[5], 'len', len(cg)]) # current is signed
 #now construct a response to command 61h :
-   r0=b''.join([df[1], df[2], df[3], df[4]])
+   r0=b''.join([df[1], df[2], df[3], df[4]]) # copy inverter's request header into the response (probably worth to replace df[4] with b'00')
    soc=i8h((100*cg[2]-1)//cg[4])
    cyc=i16h(cg[5])
-   mmiv=[i16h(i) for i in maxminind(cvs)]
-   mmit=[i16h(i) for i in maxminind(temps)]
-   faketemp=[i16h(temps[0])] + mmit
-   info=[i16h(cg[1]), i16h(unsigned(signed(cg[0])//10)), soc, cyc, cyc, soc, soc] + mmiv + faketemp + faketemp + faketemp
+   mmiv=[i16h(i) for i in maxminind(cvs)] # create voltage array for 0x61 response
+   mmit=[i16h(i) for i in maxminind(temps)] # create temperature array for 0x61 response
+   faketemp=[i16h(temps[0])] + mmit # take temps[0] as "average temp"
+   info=[i16h(cg[1]), i16h(unsigned(signed(cg[0])//10)), soc, cyc, cyc, soc, soc] + mmiv + faketemp + faketemp + faketemp # concatenate the main part of 0x61 response format
    print(['info61', info, 'len', len(info)])
    joined_info=b''.join(info)
    print(['joined_info', joined_info])
    info_length = i16h(get_info_length(joined_info))
    print(['info_length', info_length])
-   frame=r0+info_length+joined_info
+   frame=r0+info_length+joined_info # prepend response header and length
    print(['resp61', frame])
-   send_cmd(frame, sinv)
+   send_cmd(frame, sinv) # send it to the inverter with checksum
   except Exception as e:
    print(e)
 
