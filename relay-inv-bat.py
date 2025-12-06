@@ -9,7 +9,8 @@
 # ls -l /dev/serial/*/*
 # check what inverter sends using
 # cu -l /dev/serial/X/Y-port0 -s 9600
-# (find the proper inverter's port, and the other will be from the battery)
+# (find the proper inverter's port, on which you will receive ASCII chars starting from ~20024661... ,
+# and the other will be from the battery)
 # configure these port names in serial.Serial(...) constructors down in this script
 # and run it using python3 . remove debug printout when you stop needing it .
 # report observed problems to mwg@mwg.dp.ua or to https://greenpowertalk.tech/members/muwlgr.11768/
@@ -33,7 +34,7 @@ def unsigned(i): # signed to unsigned short
 def ai16(b): # parse array of shorts prepended with 8-bit length
  n=int(b[:2], 16)
  v1=b[2:]
- vv=[ int(v1[i:i+4], 16) for i in [ j*4 for j in range(0, n)] ]
+ vv=[ int(v1[i:i+4], 16) for i in [ j*4 for j in range(0, n) ] ]
  rest=v1[n*4:]
 # print(['a16i', b, '=', n, vv, rest])
  return n, vv, rest
@@ -68,7 +69,7 @@ def send_cmd(cmd, writer):
  raw_frame = b'~'+cmd+i16h(get_frame_checksum(cmd))+b'\r'
  print(['send_cmd', raw_frame])
  writer.write(raw_frame)
- writer.flush()
+# writer.flush()
 
 def get_frame_checksum(frame):
  sum = 0
@@ -117,16 +118,16 @@ def main():
    df = _decode_frame(c)
    print(['rbat', df.groups()])
    ifnmnc = re.match(b'(..)(..)(.*)', df[6])
-   print(['if, nm, rest', ifnmnc.groups()])
+   print(['if, nm, rest', ifnmnc.groups()]) # infoflag, "Command value" (?)
    nc, cvs, rest = ai16(ifnmnc[3])
-   print(['nc, cellV, rest', [nc, cvs, rest]])
+   print(['nc, cellV, rest', [nc, cvs, rest]]) #number of cells, cell voltages, rest
    nt, temps, rest = ai16(rest)
-   print(['nt, temps, rest', [nt, [t-2731 for t in temps], rest]])
+   print(['nt, temps, rest', [nt, [t-2731 for t in temps], rest]]) # number of temps, temperatures, rest
 
-   cg=list(re.match(b'(....)(....)(....)(..)(....)(....)(.*)', rest).groups())
+   cg=list(re.match(b'(....)(....)(....)(..)(....)(....)(.*)', rest).groups()) # current, voltage, remaining capacity, "User defined items", total capacity, cycles
    if cg[3] == b'02' and cg[6] == b'': cg.pop()
    elif cg[3] == b'04' and len(cg[6]) == 12:
-    rt=re.match('(......)(......)', cg[6])
+    rt=re.match('(......)(......)', cg[6]) # 24-bit remaining capacity, 24-bit total capacity
     cg[2]=rt[1]
     cg[4]=rt[2]
     cg.pop()
