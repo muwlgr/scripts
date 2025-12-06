@@ -16,11 +16,43 @@
 
 import serial, re
 
-def i16h(i): # format i into 4 hexbin positions
-    return '{:04X}'.format(i).encode()
+def fenc(f,i): return f.format(i).encode()
 
-def i8h(i): # format i into 2 hexbin positions
-    return '{:02X}'.format(i).encode()
+def i16h(i): return fenc('{:04X}', i) # format i into 4 hexbin positions
+
+def i8h(i):  return fenc('{:02X}', i) # format i into 2 hexbin positions
+
+def signed(i): # unsigned to signed short
+ if i >= 32768: i -= 65536
+ return i
+
+def unsigned(i): # signed to unsigned short
+ if i < 0: i += 65536
+ return i
+
+def ai16(b): # parse array of shorts prepended with 8-bit length
+ n=int(b[:2], 16)
+ v1=b[2:]
+ vv=[ int(v1[i:i+4], 16) for i in [ j*4 for j in range(0, n)] ]
+ rest=v1[n*4:]
+# print(['a16i', b, '=', n, vv, rest])
+ return n, vv, rest
+
+def maxminind(arr): #find max and min values in the array together with their indices
+ minv=arr[0]
+ maxv=arr[0]
+ mini=0
+ maxi=0
+ for i in range(1,len(arr)):
+     a=arr[i]
+     if a>maxv :
+         maxv=a
+         maxi=i
+     if a<minv :
+         minv=a
+         mini=i
+# print(['mmiv', arr, '=', [maxv, maxi, minv, mini]])
+ return [maxv, maxi, minv, mini] 
 
 def get_info_length(info):
  lenid = len(info)
@@ -52,7 +84,7 @@ def _decode_hw_frame(raw_frame):
 
  got_frame_checksum = get_frame_checksum(frame_data)
  assert got_frame_checksum == int(frame_chksum, 16), "bad checksum"
- print(['frame_data', frame_data])
+# print(['frame_data', frame_data])
  return frame_data
 
 def _decode_frame(frame):
@@ -61,30 +93,8 @@ def _decode_frame(frame):
 def read_frame(port):
  raw_frame = port.read_until(b'\r') # .readline() did not work with serial_asyncio
 # raw_frame = port.readline() # .readline() did not work with serial_asyncio
- print(['read_frame',raw_frame])
+# print(['read_frame',raw_frame])
  return _decode_hw_frame(raw_frame)
-
-def signed(i): # unsigned to signed short
- if i >= 32768: i -= 65536
- return i
-
-def unsigned(i): # signed to unsigned short
- if i < 0: i += 65536
- return i
-
-def maxminind(arr):
- minv=arr[0]
- maxv=arr[0]
- mini=0
- maxi=0
- for i,a in enumerate(arr[1:]):
-     if a>maxv :
-         maxv=a
-         maxi=i+1
-     if a<minv :
-         minv=a
-         mini=i+1
- return [maxv, maxi, minv, mini] 
 
 def main():
  sinv = serial.Serial(port='/dev/serial/by-path/pci-0000:00:14.0-usb-0:5.1:1.0-port0', baudrate=9600, bytesize=8, parity=serial.PARITY_NONE, stopbits=1, timeout=2, exclusive=True)
@@ -95,8 +105,8 @@ def main():
   try:
    c = read_frame(sinv)
    df = _decode_frame(c)
-   print(['rinv', df, df.groups(), df[4]])
-   assert df[4] in replace, "unknown command" # fail on unfamiliar commands
+   print(['rinv', df.groups()])
+   assert df[4] in replace, ["unknown command", df[4]] # fail on unfamiliar commands
    l=list(df.groups())
    l[3]=replace[df[4]]
    c=b''.join(l)
@@ -105,29 +115,26 @@ def main():
 
    c = read_frame(sbat)
    df = _decode_frame(c)
-   print(['rbat', df, df.groups()])
-   i = df[6]
-   ifnmnc = re.match(b'(..)(..)(..)(.*)',i)
-   print(['infoflag', ifnmnc[1], 'numModules', ifnmnc[2], 'numCells', ifnmnc[3], 'rest', ifnmnc[4]])
-   nc=int(ifnmnc[3], 16)
-   rest=ifnmnc[4][nc*4:]
-   cvst=ifnmnc[4][:nc*4]
-   cvs=[ int(cvst[i*4:i*4+4], 16) for i in range(0,nc) ]
-   print(['cellVs', cvs, 'rest', rest])
-   nttr=re.match(b'(..)(.*)', rest)
-   nt=int(nttr[1], 16)
-   print(['nt', nt, 'rest', nttr[2]])
-   ntt=nttr[2][:nt*4]
-   rest=nttr[2][nt*4:]
-   temps=[ int(ntt[i*4:i*4+4], 16) for i in range(0,nt) ]
-   print(['temps', [t-2731 for t in temps], 'rest', rest])
-   cvrutc=re.match(b'(....)(....)(....)(..)(....)(....)(.*)', rest)
-   cg=cvrutc.groups()
-   if cg[-1]==b'' : cg=cg[:len(cg)-1]
-   cg=[int(z, 16) for z in cg]
-   #cg[0]=signed(cg[0]) # current is signed
+   print(['rbat', df.groups()])
+   ifnmnc = re.match(b'(..)(..)(.*)', df[6])
+   print(['if, nm, rest', ifnmnc.groups()])
+   nc, cvs, rest = ai16(ifnmnc[3])
+   print(['nc, cellV, rest', [nc, cvs, rest]])
+   nt, temps, rest = ai16(rest)
+   print(['nt, temps, rest', [nt, [t-2731 for t in temps], rest]])
 
-   print(['curr', signed(cg[0]), 'volt', cg[1], 'remcap', cg[2], 'udi', cg[3], 'totcap', cg[4], 'cycles', cg[5], 'len', len(cg)])
+   cg=list(re.match(b'(....)(....)(....)(..)(....)(....)(.*)', rest).groups())
+   if cg[3] == b'02' and cg[6] == b'': cg.pop()
+   elif cg[3] == b'04' and len(cg[6]) == 12:
+    rt=re.match('(......)(......)', cg[6])
+    cg[2]=rt[1]
+    cg[4]=rt[2]
+    cg.pop()
+   else: assert False, ['bad _UserDefinedItems', cg[3], rest]
+
+   cg=[int(z, 16) for z in cg]
+
+   print(['curr', signed(cg[0]), 'volt', cg[1], 'remcap', cg[2], 'udi', cg[3], 'totcap', cg[4], 'cycles', cg[5], 'len', len(cg)]) # current is signed
 #now construct a response to command 61h :
    r0=b''.join([df[1], df[2], df[3], df[4]])
    soc=i8h((100*cg[2]-1)//cg[4])
