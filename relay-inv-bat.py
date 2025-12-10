@@ -69,7 +69,6 @@ def send_cmd(cmd, writer):
  raw_frame = b'~'+cmd+i16h(get_frame_checksum(cmd))+b'\r'
  print(['send_cmd', raw_frame])
  writer.write(raw_frame) # copied from Frankkkkk
-# writer.flush()
 
 def get_frame_checksum(frame):
  sum = 0
@@ -106,9 +105,9 @@ def main():
   try:
    c = read_frame(sinv)
    df = _decode_frame(c)
-   print(['rinv', df.groups()])
-   assert df[4] in replace, ["unknown command", df[4]] # fail on unfamiliar commands
    l=list(df.groups())
+   print(['rinv', l])
+   assert l[3] in replace, ["unknown command", l[3]] # fail on unfamiliar commands
    l[3]=replace[l[3]]
    c=b''.join(l)
    print(['replaced command', c])
@@ -138,7 +137,8 @@ def main():
    print(['curr', signed(cg[0]), 'volt', cg[1], 'remcap', cg[2], 'udi', cg[3], 'totcap', cg[4], 'cycles', cg[5], 'len', len(cg)]) # current is signed
 #now construct a response to command 61h :
    r0=b''.join([df[1], df[2], df[3], df[4]]) # copy battery's response header into the "synthetic" response
-   soc=i8h((100*cg[2]-1)//cg[4])
+   soc=(100*cg[2])//cg[4]
+   soc=i8h(soc)
    cyc=i16h(cg[5])
    mmiv=[i16h(i) for i in maxminind(cvs)] # create voltage array for 0x61 response
    mmit=[i16h(i) for i in maxminind(temps)] # create temperature array for 0x61 response
