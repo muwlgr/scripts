@@ -34,8 +34,8 @@ apt source lubuntu-meta
 
 # patch them to remove unneeded dependencies
 ( cd lubuntu-meta-*
-  sedprog='s/firefox$/firefox-esr/;s/leafpad/l3afpad/
-           /abiword|gnumeric|gdebi|fcitx|fwupdate|kerneloops|whoopsie|apport|indicator-|language-select|usb-creat|plymouth|gtk2-perl|ubuntu-(driver|release)|update-notifier|ubufox/d'
+  sedprog='s/firefox$/firefox-esr/;s/leafpad/l3afpad/;s/gnome-mpv/vlc/
+           /abiword|gnumeric|gdebi|fcitx|fwupdate|kerneloops|whoopsie|apport|indicator-|language-select|usb-creat|plymouth|gtk2-perl|software-properties-|ubuntu-(driver|release)|update-notifier|ubufox/d'
   { egrep -i '(seeds|architectures):' update.cfg | tr -d ':' | while read a b 
     do echo for $a in $b ';' do
     done
