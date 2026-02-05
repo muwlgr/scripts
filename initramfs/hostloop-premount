@@ -1,0 +1,60 @@
+#!/bin/sh
+[ "$1" = prereqs ] && exit 0
+# reparse cmdline, copied from init, with saving into param.conf
+for x in $(cat /proc/cmdline)
+do case $x in loop=*)       LOOP="${x#loop=}" 
+                            echo LOOP=$LOOP >> /conf/param.conf ;;
+              loopflags=*)  LOOPFLAGS="-o ${x#loopflags=}" 
+                            echo LOOPFLAGS=\""$LOOPFLAGS"\" >> /conf/param.conf ;;
+              loopfstype=*) LOOPFSTYPE="${x#loopfstype=}" 
+                            echo LOOPFSTYPE=$LOOPFSTYPE= >> /conf/param.conf ;;
+   esac
+done
+
+if [ "$LOOP" ]
+then checkfs "${ROOT}" root "${FSTYPE}"
+     mkdir -p /host
+     mount -w ${FSTYPE:+-t "${FSTYPE}"} ${ROOTFLAGS} "${ROOT}" /host
+     mountroot_status="$?"
+     if [ "$mountroot_status" != 0 ]
+     then if [ "${FSTYPE}" = ntfs ] || [ "${FSTYPE}" = vfat ]
+          then panic "
+Could not mount the partition ${ROOT}.
+This could also happen if the file system is not clean because of an operating
+system crash, an interrupted boot process, an improper shutdown, or unplugging
+of a removable device without first unmounting or ejecting it.  To fix this,
+simply reboot into Windows, let it fully start, log in, run 'chkdsk /r', then
+gracefully shut down and reboot back into Windows. After this you should be
+able to reboot again and resume the installation.
+(filesystem = ${FSTYPE}, error code = $mountroot_status)
+"
+          fi
+     fi
+
+     ROOT="/host/${LOOP#/}"
+     while [ ! -e "$ROOT" ]
+     do panic "ALERT!  $ROOT does not exist.  Dropping to a shell!"
+     done
+     echo ROOT=$ROOT >> /conf/param.conf  # override ROOT
+
+     # Get the loop filesystem type if not set
+     [ "${LOOPFSTYPE}" ] && FSTYPE="${LOOPFSTYPE-}"
+     if [ -z "$FSTYPE" ] || [ "$FSTYPE" = "unknown" ]
+     then FSTYPE=$(/sbin/blkid -s TYPE -o value "$ROOT")
+          [ -z "$FSTYPE" ] && FSTYPE="unknown"
+     fi
+     echo FSTYPE=$FSTYPE >> /conf/param.conf
+
+     if [ "$readonly" = y ]
+     then roflag=-r
+     else roflag=-w
+     fi
+
+     [ "${LOOPFLAGS}" ] && ROOTFLAGS="$LOOPFLAGS" # override ROOTFLAGS if present
+     echo $ROOTFLAGS | fgrep -w loop ||
+     if [ "$ROOTFLAGS" ]
+     then ROOTFLAGS="$ROOTFLAGS",loop
+     else ROOTFLAGS="-o loop"
+     fi
+     echo ROOTFLAGS=\""$ROOTFLAGS"\" >> /conf/param.conf
+fi

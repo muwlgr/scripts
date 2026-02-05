@@ -1,0 +1,4 @@
+#!/bin/sh
+[ "$1" = prereqs ] && exit 0
+[ -f /conf/param.conf ] && . /conf/param.conf
+[ "$LOOP" ] && [ -d "$rootmnt/host" ] && mount -o move /host "$rootmnt/host"
