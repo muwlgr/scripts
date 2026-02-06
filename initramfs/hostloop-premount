@@ -1,5 +1,6 @@
 #!/bin/sh
 [ "$1" = prereqs ] && exit 0
+. /scripts/functions
 # reparse cmdline, copied from init, with saving into param.conf
 for x in $(cat /proc/cmdline)
 do case $x in loop=*)       LOOP="${x#loop=}" 
