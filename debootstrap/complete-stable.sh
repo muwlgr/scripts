@@ -40,11 +40,13 @@ cat /etc/fstab
 
 gdev=$(awk '$2=="/host"{print $1}' /proc/mounts | sort -u)
 
-if grep ^efivar /proc/mounts
-then $emd apt install grub-efi-amd64
+#install grub-pc first to gain bios/csm compatibility
+$emd apt install grub-pc
+$emd grub-install ${gdev%[0-9]} # install into the MBR
+
+if grep ^efivar /proc/mounts # then if we have efivarfs mounted,
+then $emd apt install grub-efi-amd64 # replace it with grub-efi
      $emd grub-install # install into default EFI folder under /boot/efi/
-else $emd apt install grub-pc
-     $emd grub-install ${gdev%[0-9]} # install into the MBR
 fi
 
 bgup=/boot/grub/unicode.pf2
