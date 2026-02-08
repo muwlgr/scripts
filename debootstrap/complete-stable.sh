@@ -2,7 +2,8 @@ easl=/etc/apt/sources.list
 dakr=/usr/share/keyrings/debian-archive-keyring.gpg
 cnnf="contrib non-free non-free-firmware"
 grep ^deb $easl | while read a b c d
-do [ -f $easl.d/$c.sources ] || echo "Types: $a 
+do edcs=$easl.d/$c.sources
+   [ -f $edcs ] || echo "Types: $a 
 URIs: $b
 Suites: $c $c-updates
 Components: $d $cnnf
@@ -13,9 +14,11 @@ URIs: http://security.debian.org/debian-security
 Suites: $c-security
 Components: $d $cnnf
 Enabled: yes
-Signed-By: $dakr" > $easl.d/$c.sources
-sed -i '/^deb/s/^/#/' $easl
+Signed-By: $dakr" > $edcs
+   cat $edcs
+   sed -i '/^deb/s/^/#/' $easl
 done # reform sources.list from debootstrap into stable.sources recommended by Debian
+
 type eatmydata && emd=eatmydata
 $emd apt update
 $emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron
@@ -31,15 +34,17 @@ fgrep /var.  /etc/fstab || echo /host/linux/var.loop  /var      auto  loop     0
 fgrep /swap. /etc/fstab || echo /host/linux/swap.loop none      swap  sw       0 0 >> /etc/fstab
 fgrep /tmp   /etc/fstab || echo tmpfs                 /tmp      tmpfs defaults 0 0 >> /etc/fstab
 
+cat /etc/fstab
+
 # install and set up grub
 
 gdev=$(awk '$2=="/host"{print $1}' /proc/mounts | sort -u)
 
 if grep ^efivar /proc/mounts
 then $emd apt install grub-efi-amd64
-     $emd grub-install
+     $emd grub-install # install into default EFI folder under /boot/efi/
 else $emd apt install grub-pc
-     $emd grub-install $gdev
+     $emd grub-install ${gdev%[0-9]} # install into the MBR
 fi
 
 bgup=/boot/grub/unicode.pf2
@@ -61,22 +66,18 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 ( cd /etc/initramfs-tools/
   FSTYPE=$(blkid $gdev -s TYPE -o value) # should be vfat
   fgrep -w $FSTYPE modules || echo $FSTYPE >> modules
-  fgrep -w vfat modules && { # add vfat modules
-   for i in cp437 ascii 
-   do fgrep -w nls_$i modules || echo nls_$i >> modules
+  fgrep -w vfat modules && { 
+   for i in cp437 ascii # add vfat codepages
+   do fgrep -w nls_$i modules || echo nls_$i >> modules 
    done
   }
-  ( cd scripts/local-premount/
-    [ -f hostloop-premount ] || { sed 's/^X//' << 'SHAR_EOF' > 'hostloop-premount' &&
-SHAR_EOF
-     chmod -v +x hostloop-premount
-    } )
-
-  ( cd scripts/local-bottom/
-    [ -f hostloop-bottom ] || { sed 's/^X//' << 'SHAR_EOF' > 'hostloop-bottom' &&
-SHAR_EOF
-     chmod -v +x hostloop-bottom
-    } ) )
+  ghir=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main/initramfs
+  for i in premount bottom # add host/loop handling scripts
+  do ( cd scripts/local-$i
+       [ -f hostloop-$i ] || { wget $ghir/hostloop-$i
+                               chmod -v +x hostloop-$i
+                             } )
+  done )
 
 $emd apt install linux-image-amd64 || fakeroot $emd apt -f install # workaround for vfat volume mounted with non-root uid
 
@@ -93,3 +94,6 @@ EOF1
  systemctl is-enabled systemd-networkd || systemctl enable systemd-networkd ) 
 
 $emd apt remove ifupdown apparmor 
+
+echo your system is configured. now please add the first user and give him/her sudo rights
+echo like this : u=user \; adduser $u \; adduser $u sudo
