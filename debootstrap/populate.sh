@@ -36,7 +36,7 @@ sudo mount -v -o loop root.loop $target
 
 df -h | grep $target
 [ "$emd" ] && dpkg -L $(dpkg-query -f='${Package} ' -W '*'$emd'*' ) | egrep 'bin/|\.so' | sudo tar -T - -cS | sudo tar -C $target -xvpS
-time sudo $emd debootstrap $dist $target $mirror # 15..20 minutes on slow flash with eatmydata
+time sudo $emd debootstrap $dist $target $mirror # 6..16 minutes on slow flash with eatmydata
 df -h | grep $target
 
 tb=$target/boot
@@ -64,5 +64,5 @@ done # copy apt http proxy configuration if present
   done )
 
 echo invoking $target/root/runme.sh
-echo please run sh root/complete-stable.sh afterwards
+echo please run . root/complete-stable.sh afterwards
 sudo sh $target/root/runme.sh
