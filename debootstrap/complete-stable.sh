@@ -24,31 +24,36 @@ $emd apt update
 time $emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron wget
 $emd dpkg-reconfigure locales tzdata
 type eatmydata && emd=eatmydata
-
-# set up fstab
-fgrep /boot  /etc/fstab || echo /host/linux/boot      /boot     none  bind     0 0 >> /etc/fstab
-grep ^efivar /proc/mounts && ! fgrep /boot/efi /etc/fstab &&
-                           echo /host                 /boot/efi none  bind     0 0 >> /etc/fstab
-fgrep /swap. /etc/fstab || echo /host/linux/swap.loop none      swap  sw       0 0 >> /etc/fstab
-fgrep /tmp   /etc/fstab || echo tmpfs                 /tmp      tmpfs defaults 0 0 >> /etc/fstab
-
-cat /etc/fstab
+$emd apt install console-setup
+$emd dpkg-reconfigure console-setup
 
 # install and set up grub
 
-gdev=$(awk '$2=="/host"{print $1}' /proc/mounts | sort -u)
-df -P / | # dirty hack to satisfy grub-probe
-{ read skip
-  read a b 
-  losetup $a | 
-  { read a b c 
-    dn=$(dirname $(dirname $(echo $c | sed 's/^(//;s/)$//')))
-    ddn=$(dirname $dn)
-    [ -d $ddn ] || mkdir -pv $ddn
-    cd $ddn
-    ln -sfv /host $(basename $dn)
-  } 
-}
+loopimg=$(df -P / |
+          { read none
+            read a b
+            losetup $a |
+            { read a b c
+              echo $c | sed 's/^(//;s/)$//'
+            }
+          } ) # loop image file name in the uplevel filesystem
+
+instdir=$(dirname $loopimg)
+inst=$(basename $instdir) # should be "linux"
+dn=$(dirname $instdir) # should be /media/someone/ESD-USB
+ddn=$(dirname $dn)
+[ -d $ddn ] || mkdir -pv $ddn # dirty hack to satisfy grub-probe
+( cd $ddn
+  ln -sfv /host $(basename $dn) ) # recreate the same path as we have in the uplevel
+
+# set up fstab
+fgrep /boot  /etc/fstab || echo /host/$inst/boot      /boot     none  bind     0 0 >> /etc/fstab
+grep ^efivar /proc/mounts && ! fgrep /boot/efi /etc/fstab &&
+                           echo /host                 /boot/efi none  bind     0 0 >> /etc/fstab
+fgrep /swap. /etc/fstab || echo /host/$inst/swap.loop none      swap  sw       0 0 >> /etc/fstab
+fgrep /tmp   /etc/fstab || echo tmpfs                 /tmp      tmpfs defaults 0 0 >> /etc/fstab
+
+cat /etc/fstab
 
 # preliminary fix for update-grub
 edgd=/etc/default/grub.d/
@@ -56,16 +61,16 @@ edgd=/etc/default/grub.d/
 echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
 GRUB_DEVICE=$GRUB_DEVICE_BOOT
 GRUB_DEVICE_UUID=$GRUB_DEVICE_BOOT_UUID
-GRUB_CMDLINE_LINUX_DEFAULT="loop=linux/root.loop rw"' >> $edgd/hostloop.cfg
+GRUB_CMDLINE_LINUX_DEFAULT="loop='$inst'/root.loop rw"' >> $edgd/hostloop.cfg
 
 #install grub-pc first to gain bios/csm compatibility
 $emd apt install grub-pc
-#$emd grub-install ${gdev%[0-9]} # install into the MBR
 
 if grep ^efivar /proc/mounts # then if we have efivarfs mounted,
-then $emd apt install grub-efi-amd64 # replace it with grub-efi
+then $emd apt remove grub-pc-bin
+     $emd apt install grub-efi-amd64 # replace it with grub-efi
      $emd grub-install # install into default EFI folder under /boot/efi/
-     $emd apt autoremove # to remove grub-pc-bin
+#     $emd apt autoremove # to remove grub-pc-bin
 fi
 
 # set up initramfs-tools
@@ -73,6 +78,12 @@ fi
 ekic=/etc/kernel-img.conf
 dsln="do_symlinks = no"
 fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
+
+gdev=$(df /host |
+       { read none
+         read a b
+         echo $a
+       } )
 
 ( cd /etc/initramfs-tools/
   FSTYPE=$(blkid $gdev -s TYPE -o value) # should be vfat
@@ -85,28 +96,36 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
   ghir=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main/initramfs
   for i in premount bottom # add host/loop handling scripts
   do ( cd scripts/local-$i
-       [ -f hostloop-$i ] || { wget $ghir/hostloop-$i
-                               chmod -v +x hostloop-$i
-                             } )
+       hli=hostloop-$i
+       [ -f $hli ] || { wget $ghir/$hli
+                        chmod -v +x $hli
+                      } )
   done )
 
-$emd apt install linux-image-amd64 || fakeroot $emd apt -f install # workaround for vfat volume mounted with non-root uid
-$emd update-grub
+fakeroot $emd apt install linux-image-amd64 # workaround for vfat volume mounted with non-root uid
 $emd apt remove apparmor dhcpcd-base fakeroot ifupdown 
 $emd apt autoremove 
 $emd apt clean 
 
-[ -d /etc/systemd/network/ ] && ( cd /etc/systemd/network/ 
+ls -d /media/* | xargs -r rm -rv # remove dirty hack folders
+
+esn=/etc/systemd/network/
+sdnd=systemd-networkd
+[ -d $esn ] && ( cd $esn
  for i in en wl # initialize simplest config for systemd-networkd
- do [ -f $i.network ] || cat << EOF1 > $i.network
+ do inw=$i.network
+[ -f $inw ] || cat << EOF1 > $inw
 [Match]
 Name=$i*
 [Network]
 DHCP=ipv4
 EOF1
  done 
- systemctl is-enabled systemd-networkd || systemctl enable systemd-networkd ) 
+ systemctl is-enabled $sdnd || systemctl enable $sdnd )
 
 df -h /
-echo your system is configured. now please add the first user and give him/her sudo rights
-echo like this : 'u=user ; adduser $u ; adduser $u sudo'
+GREEN=$(tput setaf 2) # green text
+RESET=$(tput sgr0) # reset text color
+echo 'your system is configured.
+now please add the first user and give him/her sudo rights like this :
+'$GREEN'u=user ; adduser $u ; adduser $u sudo'$RESET

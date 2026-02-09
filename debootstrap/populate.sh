@@ -1,8 +1,14 @@
 # you plug in an USB flash with FAT32 volume, you mount it and cd into it in your sh/bash/dash/ash/ksh/zsh shell
 # there you run the following script
 
-df -h .
-grep ^efivar /proc/mounts && ! [ -d efi ] && mkdir -pv efi
+base=$(df -P . | { read none
+                   read a b c d e f
+                   echo $f
+                 } )
+cd $base
+pwd
+
+grep ^efivar /proc/mounts && ! [ -d efi ] && mkdir -pv efi # create efi folder under $base if it is absent
 
 #The filesystem is FAT32, so the single file size is limited to 4 GB.
 #The  cluster size is 32 KB or 64 logical sectors of 512 bytes each.
@@ -10,13 +16,14 @@ grep ^efivar /proc/mounts && ! [ -d efi ] && mkdir -pv efi
 sz=$((2**22-2**5))K 
 
 type eatmydata && emd=eatmydata # to save time on sync writes
-base=$(pwd)
 
-[ -d linux ] || mkdir -pv linux
-cd linux
+inst=linux
+[ -d $inst ] || mkdir -pv $inst
+cd $inst
+pwd
 
 ghdb=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main/debootstrap
-[ -f mount-linux.sh ] || wget $ghdb/mount-linux.sh
+[ -f mount-$inst.sh ] || wget $ghdb/mount-$inst.sh
 
 [ -d boot ] || mkdir boot
 find boot | egrep -i '(config|initrd\.img|system\.map|vmlinuz)-' | xargs -r rm -v
@@ -34,10 +41,15 @@ dist=stable # trixie or forky if you like
 
 sudo mount -v -o loop root.loop $target
 
-df -h | grep $target
+df -h $target # before debootstrap
 [ "$emd" ] && dpkg -L $(dpkg-query -f='${Package} ' -W '*'$emd'*' ) | egrep 'bin/|\.so' | sudo tar -T - -cS | sudo tar -C $target -xvpS
 time sudo $emd debootstrap $dist $target $mirror # 6..16 minutes on slow flash with eatmydata
-df -h | grep $target
+while [ $(cat $target/etc/hostname) = $(hostname) ]
+do echo Please enter a different host name for a new instance :
+   read hn
+   sudo sh -c 'echo '$hn' > '$target'/etc/hostname'
+done
+df -h $target # after debootstrap
 
 tb=$target/boot
 sudo mount -v --bind boot $tb # boot folder on FAT
