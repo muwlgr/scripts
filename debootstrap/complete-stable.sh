@@ -45,6 +45,7 @@ $emd grub-install ${gdev%[0-9]} # install into the MBR
 if grep ^efivar /proc/mounts # then if we have efivarfs mounted,
 then $emd apt install grub-efi-amd64 # replace it with grub-efi
      $emd grub-install # install into default EFI folder under /boot/efi/
+     $emd apt autoremove # to remove grub-pc-bin
 fi
 
 bgup=/boot/grub/unicode.pf2
@@ -80,6 +81,7 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
   done )
 
 $emd apt install linux-image-amd64 || fakeroot $emd apt -f install # workaround for vfat volume mounted with non-root uid
+$emd update-grub
 
 [ -d /etc/systemd/network/ ] && ( 
  cd /etc/systemd/network/ 
@@ -96,4 +98,4 @@ EOF1
 $emd apt remove ifupdown apparmor 
 
 echo your system is configured. now please add the first user and give him/her sudo rights
-echo like this : u=user \; adduser $u \; adduser $u sudo
+echo like this : 'u=user ; adduser $u ; adduser $u sudo'
