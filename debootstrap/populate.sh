@@ -63,6 +63,10 @@ done # copy apt http proxy configuration if present
      sudo mv -v $i.sh $target/root/ 
   done )
 
-echo invoking $target/root/runme.sh
-echo please run . root/complete-stable.sh afterwards
+GREEN=$(tput setaf 2) # green text
+RESET=$(tput sgr0) # reset text color
+echo invoking $GREEN$target/root/runme.sh$RESET
+echo 'please run 
+'$GREEN'. root/complete-stable.sh'$RESET' 
+afterwards'
 sudo sh $target/root/runme.sh

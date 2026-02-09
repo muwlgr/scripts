@@ -21,7 +21,7 @@ done # reform sources.list from debootstrap into stable.sources recommended by D
 
 type eatmydata && emd=eatmydata
 $emd apt update
-$emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron wget
+time $emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron wget
 $emd dpkg-reconfigure locales tzdata
 type eatmydata && emd=eatmydata
 
@@ -50,6 +50,14 @@ df -P / | # dirty hack to satisfy grub-probe
   } 
 }
 
+# preliminary fix for update-grub
+edgd=/etc/default/grub.d/
+[ -d $edgd ] || mkdir $edgd
+echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
+GRUB_DEVICE=$GRUB_DEVICE_BOOT
+GRUB_DEVICE_UUID=$GRUB_DEVICE_BOOT_UUID
+GRUB_CMDLINE_LINUX_DEFAULT="loop=linux/root.loop rw"' >> $edgd/hostloop.cfg
+
 #install grub-pc first to gain bios/csm compatibility
 $emd apt install grub-pc
 #$emd grub-install ${gdev%[0-9]} # install into the MBR
@@ -59,11 +67,6 @@ then $emd apt install grub-efi-amd64 # replace it with grub-efi
      $emd grub-install # install into default EFI folder under /boot/efi/
      $emd apt autoremove # to remove grub-pc-bin
 fi
-
-echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
-GRUB_DEVICE=$GRUB_DEVICE_BOOT
-GRUB_DEVICE_UUID=$GRUB_DEVICE_BOOT_UUID
-GRUB_CMDLINE_LINUX_DEFAULT="loop=linux/root.loop rw"' >> /etc/default/grub # to properly drive update-grub
 
 # set up initramfs-tools
 
