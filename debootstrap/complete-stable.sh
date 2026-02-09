@@ -77,7 +77,7 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 
 $emd apt install linux-image-amd64 || fakeroot $emd apt -f install # workaround for vfat volume mounted with non-root uid
 $emd update-grub
-$emd apt remove ifupdown apparmor fakeroot wget
+$emd apt remove apparmor dhcpcd-base fakeroot ifupdown wget
 $emd apt autoremove 
 $emd apt clean 
 
