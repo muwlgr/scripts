@@ -103,7 +103,7 @@ gdev=$(df /host |
   done )
 
 fakeroot $emd apt install linux-image-amd64 # workaround for vfat volume mounted with non-root uid
-$emd apt remove apparmor dhcpcd-base fakeroot ifupdown 
+$emd apt remove apparmor dhcpcd-base fakeroot ifupdown os-prober
 $emd apt autoremove 
 $emd apt clean 
 
