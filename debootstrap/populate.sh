@@ -6,7 +6,8 @@ grep ^efivar /proc/mounts && ! [ -d efi ] && mkdir -pv efi
 
 #The filesystem is FAT32, so the single file size is limited to 4 GB.
 #The  cluster size is 32 KB or 64 logical sectors of 512 bytes each.
-#Set the size limit as 4 GB minus 1 cluster, or $((2**5))K*$((2**17-1))
+#Set the  size limit as 4 GB minus 1 cluster, or 
+sz=$((2**22-2**5))K 
 
 type eatmydata && emd=eatmydata # to save time on sync writes
 base=$(pwd)
@@ -21,7 +22,7 @@ ghdb=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main/debootstra
 find boot | egrep -i '(config|initrd\.img|system\.map|vmlinuz)-' | xargs -r rm -v
 
 for i in root home var swap
-do [ -f $i.loop ] || time $emd dd if=/dev/zero  of=$i.loop bs=$((2**5))K count=$((2**17-1)) # 8..9 minutes on slow flash
+do [ -f $i.loop ] || time $emd fallocate -v -l $sz $i.loop    # 8..9 minutes on slow flash
    case $i in swap)  time $emd mkswap    --verbose $i.loop ;; # 2..3 seconds or less
               *)     time $emd mkfs.ext4 -v        $i.loop ;; # 30..31 seconds
    esac
