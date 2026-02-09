@@ -82,9 +82,10 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 
 $emd apt install linux-image-amd64 || fakeroot $emd apt -f install # workaround for vfat volume mounted with non-root uid
 $emd update-grub
+$emd apt remove ifupdown apparmor fakeroot
+$emd apt autoremove 
 
-[ -d /etc/systemd/network/ ] && ( 
- cd /etc/systemd/network/ 
+[ -d /etc/systemd/network/ ] && ( cd /etc/systemd/network/ 
  for i in en wl # initialize simplest config for systemd-networkd
  do [ -f $i.network ] || cat << EOF1 > $i.network
 [Match]
@@ -94,8 +95,6 @@ DHCP=ipv4
 EOF1
  done 
  systemctl is-enabled systemd-networkd || systemctl enable systemd-networkd ) 
-
-$emd apt remove ifupdown apparmor 
 
 echo your system is configured. now please add the first user and give him/her sudo rights
 echo like this : 'u=user ; adduser $u ; adduser $u sudo'
