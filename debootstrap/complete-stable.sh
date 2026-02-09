@@ -37,10 +37,22 @@ cat /etc/fstab
 # install and set up grub
 
 gdev=$(awk '$2=="/host"{print $1}' /proc/mounts | sort -u)
+df -P / | # dirty hack to satisfy grub-probe
+{ read skip
+  read a b 
+  losetup $a | 
+  { read a b c 
+    dn=$(dirname $(dirname $(echo $c | sed 's/^(//;s/)$//')))
+    ddn=$(dirname $dn)
+    [ -d $ddn ] || mkdir -pv $ddn
+    cd $ddn
+    ln -sfv /host $(basename $dn)
+  } 
+}
 
 #install grub-pc first to gain bios/csm compatibility
 $emd apt install grub-pc
-$emd grub-install ${gdev%[0-9]} # install into the MBR
+#$emd grub-install ${gdev%[0-9]} # install into the MBR
 
 if grep ^efivar /proc/mounts # then if we have efivarfs mounted,
 then $emd apt install grub-efi-amd64 # replace it with grub-efi
@@ -77,7 +89,7 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 
 $emd apt install linux-image-amd64 || fakeroot $emd apt -f install # workaround for vfat volume mounted with non-root uid
 $emd update-grub
-$emd apt remove apparmor dhcpcd-base fakeroot ifupdown wget
+$emd apt remove apparmor dhcpcd-base fakeroot ifupdown 
 $emd apt autoremove 
 $emd apt clean 
 
