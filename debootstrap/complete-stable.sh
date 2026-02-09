@@ -21,7 +21,7 @@ done # reform sources.list from debootstrap into stable.sources recommended by D
 
 type eatmydata && emd=eatmydata
 $emd apt update
-$emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron
+$emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron wget
 $emd dpkg-reconfigure locales tzdata
 type eatmydata && emd=eatmydata
 
@@ -48,15 +48,10 @@ then $emd apt install grub-efi-amd64 # replace it with grub-efi
      $emd apt autoremove # to remove grub-pc-bin
 fi
 
-bgup=/boot/grub/unicode.pf2
-gfb=GRUB_FONT=$bgup
-edg=/etc/default/grub
-[ -f $bgup ] && ! fgrep $gfb $edg && echo $gfb >> $edg # to help update-grub find unicode.pf2
-gdgdev=GRUB_DEVICE=$gdev
-fgrep $gdgdev $edg || echo $gdgdev >> $edg # to help update-grub find vmlinux&initrd
-UUID=$(blkid $gdev -s UUID -o value)
-ruu=root=UUID=$UUID
-grep $ruu $edg || echo GRUB_CMDLINE_LINUX_DEFAULT=\"$ruu loop=linux/root.loop rw\" >> $edg
+echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
+GRUB_DEVICE=$GRUB_DEVICE_BOOT
+GRUB_DEVICE_UUID=$GRUB_DEVICE_BOOT_UUID
+GRUB_CMDLINE_LINUX_DEFAULT="loop=linux/root.loop rw"' >> /etc/default/grub # to properly drive update-grub
 
 # set up initramfs-tools
 
@@ -82,8 +77,9 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 
 $emd apt install linux-image-amd64 || fakeroot $emd apt -f install # workaround for vfat volume mounted with non-root uid
 $emd update-grub
-$emd apt remove ifupdown apparmor fakeroot
+$emd apt remove ifupdown apparmor fakeroot wget
 $emd apt autoremove 
+$emd apt clean 
 
 [ -d /etc/systemd/network/ ] && ( cd /etc/systemd/network/ 
  for i in en wl # initialize simplest config for systemd-networkd
@@ -96,5 +92,6 @@ EOF1
  done 
  systemctl is-enabled systemd-networkd || systemctl enable systemd-networkd ) 
 
+df -h /
 echo your system is configured. now please add the first user and give him/her sudo rights
 echo like this : 'u=user ; adduser $u ; adduser $u sudo'

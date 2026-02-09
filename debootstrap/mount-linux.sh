@@ -9,4 +9,5 @@ cd $target
 [ -d host ] && sudo mount --bind $base $target/host
 df -h | grep $target
 sudo ls -l $target/root/runme.sh
-echo run this : sudo sh $target/root/runme.sh
+echo "run this :
+sudo sh $target/root/runme.sh"
