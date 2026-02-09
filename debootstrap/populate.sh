@@ -21,7 +21,7 @@ ghdb=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main/debootstra
 [ -d boot ] || mkdir boot
 find boot | egrep -i '(config|initrd\.img|system\.map|vmlinuz)-' | xargs -r rm -v
 
-for i in root home var swap
+for i in root swap
 do [ -f $i.loop ] || time $emd fallocate -v -l $sz $i.loop    # 8..9 minutes on slow flash
    case $i in swap)  time $emd mkswap    --verbose $i.loop ;; # 2..3 seconds or less
               *)     time $emd mkfs.ext4 -v        $i.loop ;; # 30..31 seconds
@@ -33,11 +33,7 @@ mirror=http://mirror.mirohost.net/debian # or what else would you like
 dist=stable # trixie or forky if you like
 
 sudo mount -v -o loop root.loop $target
-for i in home var
-do ti=$target/$i
-   [ -d $ti ] || sudo mkdir -pv $ti
-   sudo mount -v -o loop $i.loop $ti
-done
+
 df -h | grep $target
 [ "$emd" ] && dpkg -L $(dpkg-query -f='${Package} ' -W '*'$emd'*' ) | egrep 'bin/|\.so' | sudo tar -T - -cS | sudo tar -C $target -xvpS
 time sudo $emd debootstrap $dist $target $mirror # 15..20 minutes on slow flash with eatmydata

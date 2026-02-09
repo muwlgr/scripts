@@ -29,8 +29,6 @@ type eatmydata && emd=eatmydata
 fgrep /boot  /etc/fstab || echo /host/linux/boot      /boot     none  bind     0 0 >> /etc/fstab
 grep ^efivar /proc/mounts && ! fgrep /boot/efi /etc/fstab &&
                            echo /host                 /boot/efi none  bind     0 0 >> /etc/fstab
-fgrep /home. /etc/fstab || echo /host/linux/home.loop /home     auto  loop     0 0 >> /etc/fstab
-fgrep /var.  /etc/fstab || echo /host/linux/var.loop  /var      auto  loop     0 0 >> /etc/fstab
 fgrep /swap. /etc/fstab || echo /host/linux/swap.loop none      swap  sw       0 0 >> /etc/fstab
 fgrep /tmp   /etc/fstab || echo tmpfs                 /tmp      tmpfs defaults 0 0 >> /etc/fstab
 
