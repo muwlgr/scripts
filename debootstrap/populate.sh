@@ -22,9 +22,9 @@ ghdb=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main/debootstra
 find boot | egrep -i '(config|initrd\.img|system\.map|vmlinuz)-' | xargs -r rm -v
 
 for i in root home var swap
-do [ -f $i.loop ] || time $emd fallocate -l $sz $i.loop    # 8..9 minutes on slow flash
-   case $i in swap)  time $emd mkswap           $i.loop ;; # 2..3 seconds or less
-              *)     time $emd mkfs.ext4        $i.loop ;; # 30..31 seconds
+do [ -f $i.loop ] || time $emd fallocate -v -l $sz $i.loop    # 8..9 minutes on slow flash
+   case $i in swap)  time $emd mkswap    --verbose $i.loop ;; # 2..3 seconds or less
+              *)     time $emd mkfs.ext4 -v        $i.loop ;; # 30..31 seconds
    esac
 done
 
