@@ -43,10 +43,19 @@ loopimg=$(df -P / |
 instdir=$(dirname $loopimg)
 inst=$(basename $instdir) # should be "linux"
 dn=$(dirname $instdir) # should be /media/someone/ESD-USB
+
 ddn=$(dirname $dn)
 [ -d $ddn ] || mkdir -pv $ddn # dirty hack to satisfy grub-probe
 ( cd $ddn
-  ln -sfv /host $(basename $dn) ) # recreate the same path as we have in the uplevel
+  ln -sfv /host $(basename $dn) ) # recreate the same path for $loopimg as we have in the uplevel
+
+# more clean hack for update-grub
+edgd=/etc/default/grub.d/
+[ -d $edgd ] || mkdir $edgd
+echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
+GRUB_DEVICE=$GRUB_DEVICE_BOOT
+GRUB_DEVICE_UUID=$GRUB_DEVICE_BOOT_UUID
+GRUB_CMDLINE_LINUX_DEFAULT="loop='$inst'/root.loop rw"' >> $edgd/hostloop.cfg
 
 # set up fstab
 fgrep /boot  /etc/fstab || echo /host/$inst/boot      /boot     none  bind     0 0 >> /etc/fstab
@@ -56,14 +65,6 @@ fgrep /swap. /etc/fstab || echo /host/$inst/swap.loop none      swap  sw       0
 fgrep /tmp   /etc/fstab || echo tmpfs                 /tmp      tmpfs defaults 0 0 >> /etc/fstab
 
 cat /etc/fstab
-
-# preliminary fix for update-grub
-edgd=/etc/default/grub.d/
-[ -d $edgd ] || mkdir $edgd
-echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
-GRUB_DEVICE=$GRUB_DEVICE_BOOT
-GRUB_DEVICE_UUID=$GRUB_DEVICE_BOOT_UUID
-GRUB_CMDLINE_LINUX_DEFAULT="loop='$inst'/root.loop rw"' >> $edgd/hostloop.cfg
 
 #install grub-pc first to gain bios/csm compatibility
 $emd apt install grub-pc
