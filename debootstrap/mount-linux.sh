@@ -7,7 +7,9 @@ sudo mount --bind boot $tb
 cd $target
 [ -d $base/EFI ] && sudo mount --bind $base $tb/efi
 [ -d host ] && sudo mount --bind $base $target/host
-df -h | grep $target
+df -h $target
 sudo ls -l $target/root/runme.sh
-echo "run this :
-sudo sh $target/root/runme.sh"
+GREEN=$(tput setaf 2) # green text
+RESET=$(tput sgr0) # reset text color
+echo 'run this :
+'$GREEN'sudo sh '$target'/root/runme.sh'$RESET
