@@ -1,5 +1,5 @@
 # you plug in an USB flash with FAT32 volume, you mount it and cd into it in your sh/bash/dash/ash/ksh/zsh shell
-# there you run the following script
+# there you run the following script including it into your current session using "."
 
 base=$(df -P . | { read none
                    read a b c d e f

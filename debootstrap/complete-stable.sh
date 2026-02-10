@@ -1,3 +1,5 @@
+# run this script by including it into your current session using "."
+
 easl=/etc/apt/sources.list
 dakr=/usr/share/keyrings/debian-archive-keyring.gpg
 cnnf="contrib non-free non-free-firmware"
