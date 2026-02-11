@@ -99,7 +99,7 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
   done )
 
 fakeroot $emd apt install linux-image-amd64 # workaround for vfat volume mounted with non-root uid
-$emd apt remove apparmor dhcpcd-base fakeroot ifupdown os-prober
+$emd apt remove apparmor dhcpcd-base libfakeroot ifupdown os-prober
 $emd apt autoremove 
 $emd apt clean 
 
@@ -120,7 +120,7 @@ EOF1
  systemctl is-enabled $sdnd || systemctl enable $sdnd )
 
 #configure interface-specific wpa_supplicant to be started from udev
-$ghwpa=$ghms/wpa
+ghwpa=$ghms/wpa
 cd /etc/udev/rules.d
 wget $ghwpa/99-wpa-wl.rules
 cd /root
