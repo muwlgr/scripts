@@ -22,12 +22,13 @@ Signed-By: $dakr" > $edcs
 done # reform sources.list from debootstrap into stable.sources recommended by Debian
 
 type eatmydata && emd=eatmydata
-$emd apt update
-time $emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron wget iw rfkill wireless-tools wireless-regdb wpasupplicant
-$emd dpkg-reconfigure locales tzdata
-type eatmydata && emd=eatmydata
-$emd apt install console-setup
-$emd dpkg-reconfigure console-setup
+( unset LANG
+  $emd apt update
+  time $emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron wget iw rfkill wireless-tools wireless-regdb wpasupplicant
+  $emd dpkg-reconfigure locales tzdata
+  type eatmydata && emd=eatmydata
+  $emd apt install console-setup
+  $emd dpkg-reconfigure console-setup )
 
 loopimg=$(df -P / | { read none
                       read a b
@@ -60,7 +61,14 @@ ddn=$(dirname $dn)
 ( cd $ddn
   ln -sfv /host $(basename $dn) ) # recreate the same path for $loopimg as we have in the uplevel
 
+gdev=$(df /host |
+       { read none
+         read a b
+         echo $a
+       } )
+
 $emd apt install grub-pc #install grub-pc first to gain bios/csm bootability
+$emd grub-install ${gdev%[0-9]} # install into the MBR
 
 if grep ^efivar /proc/mounts # then if we have efivarfs mounted,
 then $emd apt remove grub-pc-bin
@@ -73,10 +81,7 @@ dsln="do_symlinks = no"
 fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 
 ( cd /etc/initramfs-tools
-  FSTYPE=$(blkid $(df /host | { read none
-                                read a b
-                                echo $a
-                              } ) -s TYPE -o value) # should be vfat
+  FSTYPE=$(blkid $gdev -s TYPE -o value) # should be vfat
   fgrep -w $FSTYPE modules || echo $FSTYPE >> modules
   fgrep -w vfat modules && { 
    for i in cp437 ascii # add vfat codepages
