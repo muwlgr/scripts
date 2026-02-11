@@ -23,7 +23,7 @@ done # reform sources.list from debootstrap into stable.sources recommended by D
 
 type eatmydata && emd=eatmydata
 $emd apt update
-time $emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron wget
+time $emd apt install eatmydata locales fakeroot initramfs-tools sudo systemd-resolved systemd-cron wget iw rfkill wireless-tools wireless-regdb wpasupplicant
 $emd dpkg-reconfigure locales tzdata
 type eatmydata && emd=eatmydata
 $emd apt install console-setup
@@ -83,7 +83,8 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
    do fgrep -w nls_$i modules || echo nls_$i >> modules 
    done
   }
-  ghir=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main/initramfs
+  ghms=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main
+  ghir=$ghms/initramfs
   for i in premount bottom # add host/loop handling scripts
   do ( cd scripts/local-$i
        hli=hostloop-$i
@@ -112,6 +113,13 @@ DHCP=ipv4
 EOF1
  done 
  systemctl is-enabled $sdnd || systemctl enable $sdnd )
+
+#configure interface-specific wpa_supplicant to be started from udev
+$ghwpa=$ghms/wpa
+cd /etc/udev/rules.d
+wget $ghwpa/99-wpa-wl.rules
+cd /root
+wget $ghwpa/wpa-networkd.sh
 
 df -h /
 GREEN=$(tput setaf 2) # green text
