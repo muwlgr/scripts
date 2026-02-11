@@ -42,15 +42,18 @@ Name=$i*
 DHCP=ipv4
 EOF1
  done 
- systemctl is-enabled $sdnd || systemctl enable $sdnd )
+ systemctl is-enabled $sdnd || systemctl enable $sdnd 
+ find $(pwd) -type f | xargs grep . )
 
 ghms=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main
 
-ghwpa=$ghms/wpa #configure interface-specific wpa_supplicant to be started from udev
-cd /etc/udev/rules.d
-wget $ghwpa/99-wpa-wl.rules
-cd /root
-wget $ghwpa/wpa-networkd.sh
+( ghwpa=$ghms/wpa #configure interface-specific wpa_supplicant to be started from udev
+  cd /etc/udev/rules.d
+  wget $ghwpa/99-wpa-wl.rules
+  find $(pwd) -type f | xargs grep .
+  cd /root
+  wget $ghwpa/wpa-networkd.sh
+  ls -l w*h )
 
 loopimg=$(df -P / | { read none
                       read a b
@@ -68,7 +71,7 @@ grep ^efivar /proc/mounts && ! fgrep /boot/efi /etc/fstab &&
 fgrep /swap. /etc/fstab || echo /host/$inst/swap.loop none      swap  sw       0 0 >> /etc/fstab
 fgrep /tmp   /etc/fstab || echo tmpfs                 /tmp      tmpfs defaults 0 0 >> /etc/fstab
 
-cat /etc/fstab
+grep . /etc/fstab
 
 edgd=/etc/default/grub.d # prepare to install grub
 [ -d $edgd ] || mkdir $edgd
@@ -76,6 +79,7 @@ echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
 GRUB_DEVICE=$GRUB_DEVICE_BOOT
 GRUB_DEVICE_UUID=$GRUB_DEVICE_BOOT_UUID
 GRUB_CMDLINE_LINUX_DEFAULT="loop='$inst'/root.loop rw"' >> $edgd/hostloop.cfg
+find $edgd -type f | xargs grep .
 
 dn=$(dirname $instdir) # should be /media/someone/ESD-USB
 ddn=$(dirname $dn)
@@ -117,14 +121,14 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
        [ -f $hli ] || { wget $ghir/$hli
                         chmod -v +x $hli
                       } )
-  done )
+  done 
+  find $(pwd) -type f | xargs ls -lt )
 
 fakeroot $emd apt install linux-image-amd64 # workaround for vfat volume mounted with non-root uid
 $emd apt remove apparmor dhcpcd-base libfakeroot ifupdown os-prober
 $emd apt clean 
 
 ls -d /media/* | xargs -r rm -rv # remove dirty hack folders
-
 
 df -h /
 GREEN=$(tput setaf 2) # green text
