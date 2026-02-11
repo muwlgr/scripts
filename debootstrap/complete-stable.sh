@@ -29,36 +29,17 @@ type eatmydata && emd=eatmydata
 $emd apt install console-setup
 $emd dpkg-reconfigure console-setup
 
-# install and set up grub
-
-loopimg=$(df -P / |
-          { read none
-            read a b
-            losetup $a |
-            { read a b c
-              echo $c | sed 's/^(//;s/)$//'
-            }
-          } ) # loop image file name in the uplevel filesystem
+loopimg=$(df -P / | { read none
+                      read a b
+                      losetup $a | { read a b c
+                                     echo $c | sed 's/^(//;s/)$//'
+                                   }
+                    } ) # loop image file path in the uplevel filesystem
 
 instdir=$(dirname $loopimg)
 inst=$(basename $instdir) # should be "linux"
-dn=$(dirname $instdir) # should be /media/someone/ESD-USB
 
-ddn=$(dirname $dn)
-[ -d $ddn ] || mkdir -pv $ddn # dirty hack to satisfy grub-probe
-( cd $ddn
-  ln -sfv /host $(basename $dn) ) # recreate the same path for $loopimg as we have in the uplevel
-
-# more clean hack for update-grub
-edgd=/etc/default/grub.d/
-[ -d $edgd ] || mkdir $edgd
-echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
-GRUB_DEVICE=$GRUB_DEVICE_BOOT
-GRUB_DEVICE_UUID=$GRUB_DEVICE_BOOT_UUID
-GRUB_CMDLINE_LINUX_DEFAULT="loop='$inst'/root.loop rw"' >> $edgd/hostloop.cfg
-
-# set up fstab
-fgrep /boot  /etc/fstab || echo /host/$inst/boot      /boot     none  bind     0 0 >> /etc/fstab
+fgrep /boot  /etc/fstab || echo /host/$inst/boot      /boot     none  bind     0 0 >> /etc/fstab # set up fstab
 grep ^efivar /proc/mounts && ! fgrep /boot/efi /etc/fstab &&
                            echo /host                 /boot/efi none  bind     0 0 >> /etc/fstab
 fgrep /swap. /etc/fstab || echo /host/$inst/swap.loop none      swap  sw       0 0 >> /etc/fstab
@@ -66,30 +47,36 @@ fgrep /tmp   /etc/fstab || echo tmpfs                 /tmp      tmpfs defaults 0
 
 cat /etc/fstab
 
-#install grub-pc first to gain bios/csm compatibility
-$emd apt install grub-pc
+edgd=/etc/default/grub.d/ # prepare to install grub
+[ -d $edgd ] || mkdir $edgd
+echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
+GRUB_DEVICE=$GRUB_DEVICE_BOOT
+GRUB_DEVICE_UUID=$GRUB_DEVICE_BOOT_UUID
+GRUB_CMDLINE_LINUX_DEFAULT="loop='$inst'/root.loop rw"' >> $edgd/hostloop.cfg
+
+dn=$(dirname $instdir) # should be /media/someone/ESD-USB
+ddn=$(dirname $dn)
+[ -d $ddn ] || mkdir -pv $ddn # dirty hack to satisfy grub-probe
+( cd $ddn
+  ln -sfv /host $(basename $dn) ) # recreate the same path for $loopimg as we have in the uplevel
+
+$emd apt install grub-pc #install grub-pc first to gain bios/csm bootability
 
 if grep ^efivar /proc/mounts # then if we have efivarfs mounted,
 then $emd apt remove grub-pc-bin
      $emd apt install grub-efi-amd64 # replace it with grub-efi
      $emd grub-install # install into default EFI folder under /boot/efi/
-#     $emd apt autoremove # to remove grub-pc-bin
 fi
 
-# set up initramfs-tools
-
-ekic=/etc/kernel-img.conf
+ekic=/etc/kernel-img.conf # set up initramfs-tools
 dsln="do_symlinks = no"
 fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 
-gdev=$(df /host |
-       { read none
-         read a b
-         echo $a
-       } )
-
 ( cd /etc/initramfs-tools/
-  FSTYPE=$(blkid $gdev -s TYPE -o value) # should be vfat
+  FSTYPE=$(blkid $(df /host | { read none
+                                read a b
+                                echo $a
+                              } ) -s TYPE -o value) # should be vfat
   fgrep -w $FSTYPE modules || echo $FSTYPE >> modules
   fgrep -w vfat modules && { 
    for i in cp437 ascii # add vfat codepages
@@ -112,7 +99,7 @@ $emd apt clean
 
 ls -d /media/* | xargs -r rm -rv # remove dirty hack folders
 
-esn=/etc/systemd/network/
+esn=/etc/systemd/network
 sdnd=systemd-networkd
 [ -d $esn ] && ( cd $esn
  for i in en wl # initialize simplest config for systemd-networkd
