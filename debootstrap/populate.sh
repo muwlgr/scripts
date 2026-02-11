@@ -44,8 +44,13 @@ sudo mount -v -o loop root.loop $target
 df -h $target # before debootstrap
 [ "$emd" ] && dpkg -L $(dpkg-query -f='${Package} ' -W '*'$emd'*' ) | egrep 'bin/|\.so' | sudo tar -T - -cS | sudo tar -C $target -xvpS
 time sudo $emd debootstrap $dist $target $mirror # 6..16 minutes on slow flash with eatmydata
+
+GREEN=$(tput setaf 2) # green text
+YELLOW=$(tput setaf 3) # yellow text
+RESET=$(tput sgr0) # reset text color
+
 while [ $(cat $target/etc/hostname) = $(hostname) ]
-do echo Please enter a different host name for a new instance :
+do echo $YELLOW'Please enter a different host name for a new instance :'$RESET
    read hn
    sudo sh -c 'echo '$hn' > '$target'/etc/hostname'
 done
@@ -75,8 +80,6 @@ done # copy apt http proxy configuration if present
      sudo mv -v $i.sh $target/root/ 
   done )
 
-GREEN=$(tput setaf 2) # green text
-RESET=$(tput sgr0) # reset text color
 echo invoking $GREEN$target/root/runme.sh$RESET
 echo 'please run 
 '$GREEN'. root/complete-stable.sh'$RESET' 
