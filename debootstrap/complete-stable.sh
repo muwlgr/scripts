@@ -119,12 +119,13 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
   do ( cd scripts/local-$i
        hli=hostloop-$i
        [ -f $hli ] || { wget $ghir/$hli
-                        chmod -v +x $hli
+                        chmod -v u+x $hli
                       } )
   done 
   find $(pwd) -type f | xargs ls -lt )
 
 fakeroot $emd apt install linux-image-amd64 # workaround for vfat volume mounted with non-root uid
+[ -s /boot/grub/grub.cfg ] || $emd update-grub
 $emd apt remove apparmor dhcpcd-base libfakeroot ifupdown os-prober
 $emd apt clean 
 
