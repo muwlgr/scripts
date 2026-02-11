@@ -100,7 +100,6 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 
 fakeroot $emd apt install linux-image-amd64 # workaround for vfat volume mounted with non-root uid
 $emd apt remove apparmor dhcpcd-base libfakeroot ifupdown os-prober
-$emd apt autoremove 
 $emd apt clean 
 
 ls -d /media/* | xargs -r rm -rv # remove dirty hack folders
