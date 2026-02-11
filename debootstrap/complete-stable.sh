@@ -47,7 +47,7 @@ fgrep /tmp   /etc/fstab || echo tmpfs                 /tmp      tmpfs defaults 0
 
 cat /etc/fstab
 
-edgd=/etc/default/grub.d/ # prepare to install grub
+edgd=/etc/default/grub.d # prepare to install grub
 [ -d $edgd ] || mkdir $edgd
 echo 'GRUB_FONT=/boot/grub/fonts/unicode.pf2
 GRUB_DEVICE=$GRUB_DEVICE_BOOT
@@ -72,7 +72,7 @@ ekic=/etc/kernel-img.conf # set up initramfs-tools
 dsln="do_symlinks = no"
 fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 
-( cd /etc/initramfs-tools/
+( cd /etc/initramfs-tools
   FSTYPE=$(blkid $(df /host | { read none
                                 read a b
                                 echo $a
