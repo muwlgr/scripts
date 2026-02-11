@@ -1,0 +1,1 @@
+SUBSYSTEM=="net", ACTION=="move", KERNEL=="wl*", RUN+="/usr/bin/sh /root/wpa-networkd.sh"
