@@ -30,6 +30,28 @@ type eatmydata && emd=eatmydata
   $emd apt install console-setup
   $emd dpkg-reconfigure console-setup )
 
+esn=/etc/systemd/network
+sdnd=systemd-networkd
+[ -d $esn ] && ( cd $esn
+ for i in en wl # initialize simplest config for systemd-networkd
+ do inw=$i.network
+[ -f $inw ] || cat << EOF1 > $inw
+[Match]
+Name=$i*
+[Network]
+DHCP=ipv4
+EOF1
+ done 
+ systemctl is-enabled $sdnd || systemctl enable $sdnd )
+
+ghms=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main
+
+ghwpa=$ghms/wpa #configure interface-specific wpa_supplicant to be started from udev
+cd /etc/udev/rules.d
+wget $ghwpa/99-wpa-wl.rules
+cd /root
+wget $ghwpa/wpa-networkd.sh
+
 loopimg=$(df -P / | { read none
                       read a b
                       losetup $a | { read a b c
@@ -88,7 +110,6 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
    do fgrep -w nls_$i modules || echo nls_$i >> modules 
    done
   }
-  ghms=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main
   ghir=$ghms/initramfs
   for i in premount bottom # add host/loop handling scripts
   do ( cd scripts/local-$i
@@ -104,26 +125,6 @@ $emd apt clean
 
 ls -d /media/* | xargs -r rm -rv # remove dirty hack folders
 
-esn=/etc/systemd/network
-sdnd=systemd-networkd
-[ -d $esn ] && ( cd $esn
- for i in en wl # initialize simplest config for systemd-networkd
- do inw=$i.network
-[ -f $inw ] || cat << EOF1 > $inw
-[Match]
-Name=$i*
-[Network]
-DHCP=ipv4
-EOF1
- done 
- systemctl is-enabled $sdnd || systemctl enable $sdnd )
-
-#configure interface-specific wpa_supplicant to be started from udev
-ghwpa=$ghms/wpa
-cd /etc/udev/rules.d
-wget $ghwpa/99-wpa-wl.rules
-cd /root
-wget $ghwpa/wpa-networkd.sh
 
 df -h /
 GREEN=$(tput setaf 2) # green text
