@@ -97,7 +97,7 @@ $emd apt install grub-pc #install grub-pc first to gain bios/csm bootability
 $emd grub-install ${gdev%[0-9]} # install into the MBR
 
 if grep ^efivar /proc/mounts # then if we have efivarfs mounted,
-then $emd apt remove grub-pc-bin
+then $emd apt remove grub-pc-bin # grub-pc installed into the MBR will still stay there
      $emd apt install grub-efi-amd64 # replace it with grub-efi
      $emd grub-install # install into default EFI folder under /boot/efi/
 fi

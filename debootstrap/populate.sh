@@ -80,7 +80,7 @@ done # copy apt http proxy configuration if present
      sudo mv -v $i.sh $target/root/ 
   done )
 
-echo invoking $GREEN$target/root/runme.sh$RESET
+echo invoking $YELLOW$target/root/runme.sh$RESET
 echo 'please run 
 '$GREEN'. root/complete-stable.sh'$RESET' 
 afterwards'
