@@ -94,12 +94,12 @@ gdev=$(df /host |
        } )
 
 $emd apt install grub-pc #install grub-pc first to gain bios/csm bootability
-$emd grub-install ${gdev%[0-9]} # install into the MBR
+time $emd grub-install ${gdev%[0-9]} # install into the MBR
 
 if grep ^efivar /proc/mounts # then if we have efivarfs mounted,
 then $emd apt remove grub-pc-bin # grub-pc installed into the MBR will still stay there
-     $emd apt install grub-efi-amd64 # replace it with grub-efi
-     $emd grub-install # install into default EFI folder under /boot/efi/
+     time $emd apt install grub-efi-amd64 # replace it with grub-efi
+     time $emd grub-install # install into default EFI folder under /boot/efi/
 fi
 
 ekic=/etc/kernel-img.conf # set up initramfs-tools
@@ -124,7 +124,7 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
   done 
   find $(pwd) -type f | xargs ls -lt )
 
-fakeroot $emd apt install linux-image-amd64 # workaround for vfat volume mounted with non-root uid
+time fakeroot $emd apt install linux-image-amd64 # workaround for vfat volume mounted with non-root uid
 [ -s /boot/grub/grub.cfg ] || $emd update-grub
 $emd apt remove apparmor dhcpcd-base libfakeroot ifupdown os-prober
 $emd apt clean 
