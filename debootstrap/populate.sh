@@ -25,8 +25,8 @@ pwd
 ghdb=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main/debootstrap
 [ -f mount-$inst.sh ] || wget $ghdb/mount-$inst.sh
 
+[ -d boot ] && rm -rv boot
 [ -d boot ] || mkdir boot
-find boot | egrep -i '(config|initrd\.img|system\.map|vmlinuz)-' | xargs -r rm -v
 
 for i in root swap
 do [ -f $i.loop ] || time $emd fallocate -v -l $sz $i.loop    # 8..9 minutes on slow flash
@@ -36,7 +36,10 @@ do [ -f $i.loop ] || time $emd fallocate -v -l $sz $i.loop    # 8..9 minutes on 
 done
 
 target=$(mktemp -d)
-mirror=http://mirror.mirohost.net/debian # or what else would you like
+mirror=$(find /etc/apt/sources.list* -iname '*.sources' | xargs -r fgrep URIs: | grep -v debian-security | { read a b 
+                                                                                                             echo $b 
+                                                                                                           } ) # take existing mirror from the host
+[ "$mirror" ] || mirror=http://mirror.mirohost.net/debian # or set it to some default value
 dist=stable # trixie or forky if you like
 
 sudo mount -v -o loop root.loop $target
