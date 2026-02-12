@@ -10,7 +10,7 @@ cf=$ws-$INTERFACE.conf
                                 egrep -i '(update_config|ctrl_interface)=' /usr/share/doc/wpasupplicant/examples/wpa-roam.conf | sed 's/^#//' > $cf # create empty $cf from a bundled example
                               }
               }
-systemctl is-active $ws && { systemctl stop $ws
-                             systemctl is-enabled $ws && systemctl disable $ws # stop and disable global $ws
-                           }
+systemctl is-active  $ws && systemctl stop    $ws
+systemctl is-enabled $ws && systemctl disable $ws # stop and disable global $ws
+
 systemctl --no-block start $sn # start interface-specific $ws
