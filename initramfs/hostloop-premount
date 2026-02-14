@@ -9,7 +9,7 @@ do case $x in loop=*)       LOOP="${x#loop=}"
               loopflags=*)  LOOPFLAGS="-o ${x#loopflags=}" 
                             echo LOOPFLAGS=\""$LOOPFLAGS"\" >> /conf/param.conf ;;
               loopfstype=*) LOOPFSTYPE="${x#loopfstype=}" 
-                            echo LOOPFSTYPE=$LOOPFSTYPE= >> /conf/param.conf ;;
+                            echo LOOPFSTYPE=$LOOPFSTYPE >> /conf/param.conf ;;
    esac
 done
 
