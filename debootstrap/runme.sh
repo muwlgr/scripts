@@ -6,13 +6,12 @@ cd $root
 for i in dev dev/pts proc run sys tmp var/cache/apt/archives
 do [ -d /$i ] && mount --bind /$i ./$i
 done
-grep ^efivar /proc/mounts | 
-while read a b c 
-do mount --bind $b .$b 
-done || :
+grep ^efivar /proc/mounts | while read a b c
+                            do mount --bind $b .$b
+                            done || :
 chroot . || :
 while fgrep $root/ /proc/mounts
 do fgrep $root/ /proc/mounts | while read h i j
-   do umount $i || :
-   done 
+                               do umount $i || :
+                               done
 done

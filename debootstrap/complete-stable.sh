@@ -5,7 +5,7 @@ dakr=/usr/share/keyrings/debian-archive-keyring.gpg
 cnnf="contrib non-free non-free-firmware"
 grep ^deb $easl | while read a b c d
 do edcs=$easl.d/$c.sources
-   [ -f $edcs ] || echo "Types: $a 
+   [ -f $edcs ] || echo "Types: $a
 URIs: $b
 Suites: $c $c-updates
 Components: $d $cnnf
@@ -41,8 +41,8 @@ Name=$i*
 [Network]
 DHCP=ipv4
 EOF1
- done 
- systemctl is-enabled $sdnd || systemctl enable $sdnd 
+ done
+ systemctl is-enabled $sdnd || systemctl enable $sdnd
  find $(pwd) -type f | xargs grep . )
 
 ghms=https://raw.githubusercontent.com/muwlgr/scripts/refs/heads/main
@@ -87,11 +87,10 @@ ddn=$(dirname $dn)
 ( cd $ddn
   ln -sfv /host $(basename $dn) ) # recreate the same path for $loopimg as we have in the uplevel
 
-gdev=$(df /host |
-       { read none
-         read a b
-         echo $a
-       } )
+gdev=$(df /host | { read none
+                    read a b
+                    echo $a
+                  } )
 
 $emd apt install grub-pc #install grub-pc first to gain bios/csm bootability
 time $emd grub-install ${gdev%[0-9]} # install into the MBR
@@ -109,11 +108,10 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
 ( cd /etc/initramfs-tools
   FSTYPE=$(blkid $gdev -s TYPE -o value) # should be vfat
   fgrep -w $FSTYPE modules || echo $FSTYPE >> modules
-  fgrep -w vfat modules && { 
-   for i in cp437 ascii # add vfat codepages
-   do fgrep -w nls_$i modules || echo nls_$i >> modules 
-   done
-  }
+  fgrep -w vfat modules && { for i in cp437 ascii # add vfat codepages
+                             do fgrep -w nls_$i modules || echo nls_$i >> modules
+                             done
+                           }
   ghir=$ghms/initramfs
   for i in premount bottom # add host/loop handling scripts
   do ( cd scripts/local-$i
@@ -121,13 +119,13 @@ fgrep "$dsln" $ekic || echo "$dsln" >> $ekic
        [ -f $hli ] || { wget $ghir/$hli
                         chmod -v u+x $hli
                       } )
-  done 
+  done
   find $(pwd) -type f | xargs ls -lt )
 
 time fakeroot $emd apt install linux-image-amd64 # workaround for vfat volume mounted with non-root uid
 [ -s /boot/grub/grub.cfg ] || $emd update-grub
 $emd apt remove apparmor dhcpcd-base libfakeroot ifupdown os-prober
-$emd apt clean 
+$emd apt clean
 
 ls -d /media/* | xargs -r rm -rv # remove dirty hack folders
 

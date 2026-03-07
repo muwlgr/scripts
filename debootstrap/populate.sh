@@ -61,11 +61,10 @@ df -h $target # after debootstrap
 
 tb=$target/boot
 sudo mount -v --bind boot $tb # boot folder on FAT
-[ -d $base/EFI ] && {
- tbe=$tb/efi
- [ -d $tbe ] || sudo mkdir -pv $tbe
- sudo mount -v --bind $base $tbe
-}
+[ -d $base/EFI ] && { tbe=$tb/efi
+                      [ -d $tbe ] || sudo mkdir -pv $tbe
+                      sudo mount -v --bind $base $tbe
+                    }
 
 for i in host 
 do ti=$target/$i
