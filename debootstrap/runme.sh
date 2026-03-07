@@ -11,7 +11,8 @@ grep ^efivar /proc/mounts | while read a b c
                             done || :
 chroot . || :
 while fgrep $root/ /proc/mounts
-do fgrep $root/ /proc/mounts | while read h i j
-                               do umount $i || :
-                               done
+do fgrep $root/ /proc/mounts | sort -rk2 | while read h i j
+                                           do umount $i || :
+                                           done
 done
+fgrep $root /proc/mounts
