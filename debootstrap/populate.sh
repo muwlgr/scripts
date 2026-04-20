@@ -36,9 +36,10 @@ do [ -f $i.loop ] || time $emd fallocate -v -l $sz $i.loop    # 8..9 minutes on 
 done
 
 target=$(mktemp -d)
-mirror=$(find /etc/apt/sources.list* -iname '*.sources' | xargs -r fgrep URIs: | grep -v debian-security | { read a b 
-                                                                                                             echo $b 
-                                                                                                           } ) # take existing mirror from the host
+mirror=$(find /etc/apt/sources.list* -iname '*.sources' | xargs -r grep 'URIs: .*/debian' | grep -v debian-security | 
+         { read a b 
+           echo $b 
+         } ) # take existing mirror from the host
 [ "$mirror" ] || mirror=http://mirror.mirohost.net/debian # or set it to some default value
 dist=stable # trixie or forky if you like
 
